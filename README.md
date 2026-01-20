@@ -98,5 +98,6 @@ Local Testing: Ensure both the frontend and backend run locally without errors b
 ### Adding New Dependencies  
 
 * **If you install a Python package:** Run `pip freeze > requirements.txt` so others can update their environment.  
-* **If you install a Node package:** Simply commit the updated `package.json` and `package-lock.json`.  
+* **If you install a Node package:** Simply commit the updated `package.json` and `package-lock.json`.
+  
 API Proxy: The frontend is configured to proxy /api requests to `http://127.0.0.1:8000.`  

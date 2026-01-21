@@ -1,3 +1,5 @@
+![Frontend CI](https://github.com/kelseybowen/AIJobHunt/actions/workflows/frontend.yml/badge.svg)
+![Backend CI](https://github.com/kelseybowen/AIJobHunt/actions/workflows/backend.yml/badge.svg)
 
 # AI Job Hunt - Capstone Project
 

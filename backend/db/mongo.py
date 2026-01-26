@@ -2,41 +2,27 @@ import os
 from pymongo import AsyncMongoClient
 
 
-client = None
-_db = None
+class MongoManager:
+    def __init__(self):
+        self.client = None
+        self.db = None
+
+    async def connect(self, db_name: str):
+        uri = os.getenv("MONGODB_CONNECT_STRING")
+
+        self.client = AsyncMongoClient(uri)
+        self.db = self.client[db_name]
+
+        await self.client.admin.command("ping")
+        print("Connected to MongoDB")
+
+    async def close(self):
+        if self.client:
+            await self.client.close()
 
 
-async def connect_to_mongo():
-    global client, _db
-
-    uri = os.getenv("MONGODB_CONNECT_STRING")
-    db_name = os.getenv("PROD_DB")
-
-    client = AsyncMongoClient(uri)
-    _db = client[db_name]
-
-    await client.admin.command("ping")
-    print("Connected to MongoDB")
-
-
-async def connect_to_mongo_test():
-    global client, _db
-
-    uri = os.getenv("MONGODB_CONNECT_STRING")
-    db_name = os.getenv("TEST_DB")
-
-    client = AsyncMongoClient(uri)
-    _db = client[db_name]
-
-    await client.admin.command("ping")
-    print("Connected to MongoDB")
-
-
-async def close_mongo():
-    global client
-    if client:
-        await client.close()
+mongo = MongoManager()
 
 
 def get_db():
-    return _db
+    return mongo.db

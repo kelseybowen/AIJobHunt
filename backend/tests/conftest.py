@@ -1,16 +1,15 @@
+import os
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from backend.main import app
-from backend.db.mongo import connect_to_mongo_test, close_mongo, get_db
+from backend.db.mongo import mongo, get_db
 
 
 @pytest_asyncio.fixture
 async def client():
-    await connect_to_mongo_test()
+    await mongo.connect(os.getenv("TEST_DB"))
 
-    transport = ASGITransport(
-        app=app
-    )
+    transport = ASGITransport(app=app)
 
     async with AsyncClient(
         transport=transport,
@@ -18,7 +17,7 @@ async def client():
     ) as ac:
         yield ac
 
-    await close_mongo()
+    await mongo.close()
 
 
 @pytest_asyncio.fixture(autouse=True)

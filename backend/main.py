@@ -1,8 +1,8 @@
+import os
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-
-from backend.db.mongo import connect_to_mongo, close_mongo
+from backend.db.mongo import mongo
 from backend.routers import users
 
 load_dotenv()
@@ -10,9 +10,9 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await connect_to_mongo()
+    await mongo.connect(os.getenv("PROD_DB"))
     yield
-    await close_mongo()
+    await mongo.close()
 
 
 app = FastAPI(lifespan=lifespan)

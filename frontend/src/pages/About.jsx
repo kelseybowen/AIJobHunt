@@ -1,11 +1,9 @@
-import Navbar from "../components/Navbar"
+import PageHeader from "../components/PageHeader"
 
 const About = () => {
   return (
-    <div>
-      <Navbar/>
-      <h1>About</h1>
-    </div>
+    <PageHeader title="About" />
+    
   )
 }
 export default About

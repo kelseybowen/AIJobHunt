@@ -1,11 +1,9 @@
-import Navbar from "../components/Navbar"
+import PageHeader from "../components/PageHeader"
 
 const Dashboard = () => {
+  const testSubtitle = "Prop Testing 123";
   return (
-    <div>
-      <Navbar/>
-      <h1>Dashboard</h1>
-    </div>
-  )
+    <PageHeader title="Dashboard"/>
+  );
 }
 export default Dashboard

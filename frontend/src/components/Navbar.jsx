@@ -1,19 +1,28 @@
-import { Link } from "react-router-dom"
+import React from 'react';
+import { Navbar, Nav, Container } from 'react-bootstrap';
+import { Link } from "react-router-dom";
 
-const Navbar = () => {
+const AppNavbar = () => {
   return (
-    <header className="w-full bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto w-full flex justify-between items-center px-6">
-        <h1 className="text-xl font-bold py-4">AI Job Hunt</h1>
-        <nav className="flex items-center gap-x-6">
-          <Link to="/">Home</Link>
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/about">About</Link>
-          <Link to="/search">Search</Link>
-          <Link to="/results">Results</Link>
-        </nav>
-      </div>
-    </header>
-  )
+    <Navbar bg="white" className="shadow-sm border-bottom py-3">
+      <Container>
+
+        <Navbar.Brand as={Link} to="/" className="fw-bold fs-4">
+          AI Job Hunt
+        </Navbar.Brand>
+
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="ms-auto">
+            <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
+            <Nav.Link as={Link} to="/about">About</Nav.Link>
+            <Nav.Link as={Link} to="/search">Search</Nav.Link>
+            <Nav.Link as={Link} to="/login">Login</Nav.Link>
+          </Nav>
+        </Navbar.Collapse>
+        
+      </Container>
+    </Navbar>
+  );
 }
-export default Navbar
+
+export default AppNavbar;

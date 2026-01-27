@@ -1,11 +1,8 @@
-import Navbar from "../components/Navbar"
+import PageHeader from "../components/PageHeader"
 
 const Search = () => {
   return (
-    <div>
-      <Navbar/>
-      <h1>Search</h1>
-    </div>
+    <PageHeader title="Search" />
   )
 }
 export default Search

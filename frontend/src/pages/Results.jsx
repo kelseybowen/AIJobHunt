@@ -1,11 +1,9 @@
-import Navbar from "../components/Navbar"
+import PageHeader from "../components/PageHeader"
 
 const Results = () => {
   return (
-    <div>
-      <Navbar/>
-      <h1>Results</h1>
-    </div>
+    <PageHeader title="Results" />
+    
   )
 }
 export default Results

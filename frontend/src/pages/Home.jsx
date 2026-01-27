@@ -1,13 +1,9 @@
-import Navbar from '../components/Navbar'
-import Login from './Login'
+import PageHeader from "../components/PageHeader"
 
 const Home = () => {
   return (
-    <div>
-      <Navbar/>
-      <h1>Home</h1>
-      <Login/>
-    </div>
+    <PageHeader title="Home" />
+
   )
 }
 export default Home

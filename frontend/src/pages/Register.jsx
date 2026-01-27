@@ -1,11 +1,9 @@
-import Navbar from "../components/Navbar"
+import PageHeader from "../components/PageHeader"
 
 const Register = () => {
   return (
-    <div>
-      <h1>Register</h1>
-      <Navbar/>
-    </div>
+    <PageHeader title="Register" />
+
   )
 }
 export default Register

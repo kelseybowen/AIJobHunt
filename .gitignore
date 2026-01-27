@@ -7,10 +7,10 @@ frontend/.env.local
 # --- Backend (Python) ---
 backend/venv/
 backend/.env
-backend/__pycache__/
 backend/*.py[cod]
 backend/*.so
-backend/.pytest_cache/
+*.pytest_cache*
+*__pycache__*
 
 # --- System & Editors ---
 .vscode/

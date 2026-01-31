@@ -14,11 +14,17 @@ import os
 import re
 from datetime import datetime
 from typing import Dict, Any, Optional, List
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in backend directory
+env_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env')
+load_dotenv(dotenv_path=env_path)
 
 # Adzuna API Credentials
 # Note: Adzuna requires BOTH app_id and app_key for authentication
-ADZUNA_APP_ID = "ede2e44c"
-ADZUNA_API_KEY = "ed6e34bc3164e4b360c45aacaff11d83"
+# Loaded from environment variables
+ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
+ADZUNA_API_KEY = os.getenv("ADZUNA_API_KEY")
 
 # Top 25 Computer Science Job Titles (2026)
 TOP_25_JOBS = [
@@ -71,14 +77,19 @@ def search_adzuna_jobs(keywords: str, page: int = 1,
         # Adzuna API endpoint format - page number goes in the URL path
         url = f'https://api.adzuna.com/v1/api/jobs/us/search/{page}'
         
-        # Use provided credentials or defaults
+        # Use provided credentials or defaults from environment variables
         api_key = app_key or ADZUNA_API_KEY
         api_app_id = app_id or ADZUNA_APP_ID
         
         if not api_app_id:
             raise ValueError(
                 "Adzuna API requires both app_id and app_key. "
-                "Please provide an app_id parameter or set ADZUNA_APP_ID in the file."
+                "Please provide an app_id parameter or set ADZUNA_APP_ID in the .env file."
+            )
+        if not api_key:
+            raise ValueError(
+                "Adzuna API requires both app_id and app_key. "
+                "Please provide an app_key parameter or set ADZUNA_API_KEY in the .env file."
             )
         
         params = {

@@ -15,6 +15,11 @@ import os
 import re
 from datetime import datetime
 from typing import Dict, Any, Optional, List
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in backend directory
+env_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env')
+load_dotenv(dotenv_path=env_path)
 
 
 def test_usajobs_api(keywords: Optional[str] = None,
@@ -32,9 +37,14 @@ def test_usajobs_api(keywords: Optional[str] = None,
         Dictionary containing job postings from USAJobs API
         Returns all jobs with "Software Engineer" in the title
     """
-    # USAJobs API key
+    # USAJobs API key - loaded from environment variables
     if not api_key:
-        api_key = "U7bsDJ+hBtH7J5gyY/wBpkUbYT3JmHUZKX6dYt3cKT8="
+        api_key = os.getenv("USAJOBS_API_KEY")
+        if not api_key:
+            raise ValueError(
+                "USAJobs API requires an API key. "
+                "Please provide an api_key parameter or set USAJOBS_API_KEY in the .env file."
+            )
     
     try:
         url = 'https://data.usajobs.gov/api/Search'

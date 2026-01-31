@@ -15,9 +15,15 @@ import os
 import re
 from datetime import datetime
 from typing import Dict, Any, Optional, List
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in backend directory
+env_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env')
+load_dotenv(dotenv_path=env_path)
 
 # The Muse API Credentials
-MUSE_API_KEY = "b45427ca13a1d219855370659f4eaec4910f62d378aee7802252812736b185a6"
+# Loaded from environment variables
+MUSE_API_KEY = os.getenv("MUSE_API_KEY")
 
 
 def test_muse_api(page: int = 1,
@@ -60,7 +66,7 @@ def test_muse_api(page: int = 1,
         if not api_key_value:
             raise ValueError(
                 "The Muse API requires an API key. "
-                "Please provide an api_key parameter or set MUSE_API_KEY in the file."
+                "Please provide an api_key parameter or set MUSE_API_KEY in the .env file."
             )
         
         # Set headers with API key

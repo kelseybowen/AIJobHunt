@@ -23,9 +23,15 @@ import os
 import re
 from datetime import datetime
 from typing import Dict, Any, Optional, List
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in backend directory
+env_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env')
+load_dotenv(dotenv_path=env_path)
 
 # SerpAPI Credentials
-SERPAPI_API_KEY = "46aa4811c791d8ab8d880000cddbe3998fe9f4749956a051577d5dc4de13f64a"
+# Loaded from environment variables
+SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 
 
 def test_serpapi_google_jobs(query: str = "Software Engineer",
@@ -57,7 +63,7 @@ def test_serpapi_google_jobs(query: str = "Software Engineer",
         if not api_key_value:
             raise ValueError(
                 "SerpAPI requires an API key. "
-                "Please provide an api_key parameter or set SERPAPI_API_KEY in the file."
+                "Please provide an api_key parameter or set SERPAPI_API_KEY in the .env file."
             )
         
         # Build search parameters

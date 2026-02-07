@@ -135,3 +135,5 @@ async def delete_saved_search(search_id: str):
 
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="SavedSearch not found")
+
+    return

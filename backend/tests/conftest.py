@@ -21,7 +21,16 @@ async def client():
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def clean_users_collection(client):
-    yield
+async def clean_collections(client):
+
     db = get_db()
+
+    # Clean BEFORE
     await db.users.delete_many({})
+    await db.jobs.delete_many({})
+
+    yield
+
+    # Clean AFTER
+    await db.users.delete_many({})
+    await db.jobs.delete_many({})

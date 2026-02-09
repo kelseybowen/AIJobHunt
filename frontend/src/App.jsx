@@ -13,16 +13,18 @@ import TermsOfUse from './pages/TermsOfUse';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
+import LogoutButton from './components/LogoutButton';
+
 
 function App() {
   const [msg, setMsg] = React.useState("");
   const [user, setUser] = React.useState(null);
+  const { userAuthState } = useAuth();
 
   useEffect(() => {
-    fetch('/api')
-      .then(res => res.json())
-      .then(data => setMsg(data.message))
-      .catch(err => setMsg("API not connected"))
+    // Auth debugging
+    console.log("Current User State:", userAuthState);
   }, [])
 
   return (
@@ -41,7 +43,8 @@ function App() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
 
-        {/* Protected Routes - to implement later
+
+        {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
@@ -50,14 +53,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/results"
-          element={
-            <ProtectedRoute user={user}>
-              <Results />
-            </ProtectedRoute>
-          }
-        /> */}
       </Routes>
       <Footer />
     </div>

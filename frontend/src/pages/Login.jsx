@@ -1,22 +1,34 @@
-import { useForm } from 'react-hook-form';
-import api from '../services/api';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
-import { Alert } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { Alert, Container, Row, Col, Card, Form, Button, InputGroup, Spinner } from 'react-bootstrap';
+import { useNavigate, Link } from 'react-router-dom';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [authError, setAuthError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
+  
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors, isSubmitting } 
+  } = useForm();
 
   const onSubmit = async (data) => {
     setAuthError(null);
     try {
       const response = await api.post('/auth/login', data);
-      login(response.data.access_token);
-      navigate('/dashboard');
+      if (response.data.user) {
+        login(response.data.access_token, response.data.user);
+        navigate('/dashboard');
+      } else {
+        console.error("User data missing from server response");
+        setAuthError("Server error: Missing user profile data.");
+      }
     } catch (error) {
       const message = error.response?.data?.detail || 'An unexpected error occurred. Please try again.';
       setAuthError(message);
@@ -24,11 +36,11 @@ const Login = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-12 col-md-6 col-lg-4">
-          <div className="card shadow-sm border-0">
-            <div className="card-body p-4">
+    <Container className="mt-5">
+      <Row className="justify-content-center">
+        <Col md={6} lg={4}>
+          <Card className="shadow-sm border-0">
+            <Card.Body className="p-4">
               <h2 className="text-center mb-4 fw-bold">Login</h2>
 
               {authError && (
@@ -37,12 +49,14 @@ const Login = () => {
                 </Alert>
               )}
 
-              <form onSubmit={handleSubmit(onSubmit)}>
+              <Form onSubmit={handleSubmit(onSubmit)}>
+
                 {/* Email Field */}
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-muted">Email Address</label>
-                  <input
+                <Form.Group className="mb-3">
+                  <Form.Label className="small fw-bold text-muted">Email Address</Form.Label>
+                  <Form.Control
                     type="email"
+                    placeholder="email@example.com"
                     {...register('email', {
                       required: 'Email is required',
                       pattern: {
@@ -50,55 +64,66 @@ const Login = () => {
                         message: 'Invalid email address'
                       }
                     })}
-                    className={`form-control ${errors.email ? 'is-invalid' : ''}`}
-                    placeholder="email@example.com"
+                    isInvalid={!!errors.email}
                   />
-                  {errors.email && (
-                    <div className="invalid-feedback">{errors.email.message}</div>
-                  )}
-                </div>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.email?.message}
+                  </Form.Control.Feedback>
+                </Form.Group>
 
                 {/* Password Field */}
-                <div className="mb-4">
-                  <label className="form-label small fw-bold text-muted">Password</label>
-                  <input
-                    type="password"
-                    {...register('password', {
-                      required: 'Password is required',
-                      minLength: { value: 8, message: 'Password must be at least 8 characters' }
-                    })}
-                    className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                    placeholder="••••••••"
-                  />
-                  {errors.password && (
-                    <div className="invalid-feedback">{errors.password.message}</div>
-                  )}
-                </div>
+                <Form.Group className="mb-4">
+                  <Form.Label className="small fw-bold text-muted">Password</Form.Label>
+                  <InputGroup hasValidation>
+                    <Form.Control
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      {...register('password', {
+                        required: 'Password is required',
+                        minLength: { value: 8, message: 'Password must be at least 8 characters' }
+                      })}
+                      isInvalid={!!errors.password}
+                    />
+                    <Button 
+                      variant="outline-secondary" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
+                    >
+                      <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                    </Button>
+                    <Form.Control.Feedback type="invalid">
+                      {errors.password?.message}
+                    </Form.Control.Feedback>
+                  </InputGroup>
+                </Form.Group>
 
-                <div className="text-center mt-3">
-                  {/* Submit Button */}
-                  <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full py-2 fw-semibold mx-2">
+                <div className="text-center">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    variant="primary" 
+                    className="w-100 py-2 fw-semibold mb-3"
+                  >
                     {isSubmitting ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <Spinner animation="border" size="sm" className="me-2" />
                         Signing in...
                       </>
                     ) : (
                       'Sign In'
                     )}
-                  </button>
-                  <div className="text-center mt-3">
-                    <p className="small text-muted">
-                      Need an account? <a href="/register" className="text-decoration-none">Create Account</a>
-                    </p>
-                  </div>
+                  </Button>
+
+                  <p className="small text-muted mt-2">
+                    Need an account? <Link to="/register" className="text-decoration-none">Create Account</Link>
+                  </p>
                 </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 

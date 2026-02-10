@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Container, Row, Col, Card, Form, Button, InputGroup } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
@@ -17,11 +17,14 @@ const Register = () => {
     setRegError(null);
     try {
       const { confirmPassword, ...registerData } = data;
-      // Send data to Python backend
       const response = await api.post('/auth/register', registerData);
-      // Auto-login after successful registration
-      login(response.data.access_token);
-      navigate('/dashboard');
+      if (response.data && response.data.user && response.data.access_token) {
+        login(response.data.access_token, response.data.user);
+        navigate('/dashboard');
+      } else {
+        console.error("Malformed response from server:", response.data);
+        setRegError("Account created, but we couldn't load your profile. Please try logging in.");
+      }
     } catch (error) {
       const message = error.response?.data?.detail || 'Registration failed. Please try again.';
       setRegError(message);
@@ -115,7 +118,7 @@ const Register = () => {
               <div className="text-center mt-3">
                 <p className="small text-muted mb-0">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-primary">
+                  <Link to="/login" className="text-decoration-none">
                     Log In
                   </Link>
                 </p>

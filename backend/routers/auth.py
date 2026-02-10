@@ -1,11 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
-from bson import ObjectId
-from typing import List
 from backend.db.mongo import get_db
 from backend.models.user import (
     UserCreate,
-    UserLogin,
-    user_helper
+    UserLogin
 )
 from datetime import datetime, timezone
 from backend.utils.security import hash_password, verify_password, create_access_token
@@ -29,11 +26,15 @@ async def register_user(user_in: UserCreate):
     # insert into DB
     result = await db.users.insert_one(user_dict)
     #generate token
-    access_token = create_access_token(data={"sub": user_in.email})
+    access_token = create_access_token(data={"sub": user_dict["email"]})
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "user": {"id": str(result.inserted_id), "email": user_in.email}
+        "user": {
+            "id": str(result.inserted_id),
+            "name": user_dict.get("name"),
+            "email": user_dict["email"]
+        }
     }
 
 @router.post("/login")
@@ -50,5 +51,10 @@ async def login(credentials: UserLogin):
     access_token = create_access_token(data={"sub": user["email"]})
     return {
         "access_token": access_token, 
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "user": {
+            "id": str(user["_id"]),
+            "name": user.get("name"),
+            "email": user["email"]
+        }
     }

@@ -13,19 +13,10 @@ import TermsOfUse from './pages/TermsOfUse';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
-import { useAuth } from './context/AuthContext';
-import LogoutButton from './components/LogoutButton';
 
 
 function App() {
-  const [msg, setMsg] = React.useState("");
   const [user, setUser] = React.useState(null);
-  const { userAuthState } = useAuth();
-
-  useEffect(() => {
-    // Auth debugging
-    console.log("Current User State:", userAuthState);
-  }, [])
 
   return (
     <div className="d-flex flex-column min-vh-100">

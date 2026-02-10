@@ -2,25 +2,24 @@ import { useForm } from 'react-hook-form';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Alert } from 'react-bootstrap';
 
 const Login = () => {
+  const [authError, setAuthError] = useState(null);
   const navigate = useNavigate();
   const { login } = useAuth();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm();
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
 
   const onSubmit = async (data) => {
+    setAuthError(null);
     try {
       const response = await api.post('/auth/login', data);
       login(response.data.access_token);
       navigate('/dashboard');
     } catch (error) {
-      console.error('Login Failed:', error.response?.data?.message || 'Server error');
+      const message = error.response?.data?.detail || 'An unexpected error occurred. Please try again.';
+      setAuthError(message);
     }
   };
 
@@ -31,6 +30,12 @@ const Login = () => {
           <div className="card shadow-sm border-0">
             <div className="card-body p-4">
               <h2 className="text-center mb-4 fw-bold">Login</h2>
+
+              {authError && (
+                <Alert variant="danger" className="py-2 small text-center">
+                  {authError}
+                </Alert>
+              )}
 
               <form onSubmit={handleSubmit(onSubmit)}>
                 {/* Email Field */}
@@ -72,11 +77,7 @@ const Login = () => {
 
                 <div className="text-center mt-3">
                   {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="btn btn-primary w-full py-2 fw-semibold mx-2"
-                  >
+                  <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full py-2 fw-semibold mx-2">
                     {isSubmitting ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>

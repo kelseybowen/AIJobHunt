@@ -35,7 +35,7 @@ const Register = () => {
     <Container className="mt-5">
       <Row className="justify-content-center">
         <Col md={6} lg={5}>
-          <Card className="shadow-sm">
+          <Card className="shadow-sm border-0">
             <Card.Body className="p-4">
               <h2 className="text-center mb-4">Create Account</h2>
 

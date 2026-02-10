@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from backend.db.mongo import mongo
-from backend.routers import (users, jobs, auth)
+from backend.routers import (users, jobs, auth, savedsearches, userstats)
 
 load_dotenv()
 
@@ -27,5 +27,11 @@ app.add_middleware(
 )
 
 app.include_router(users.router, prefix="/users", tags=["Users"])
+app.include_router(userstats.router, prefix="/users", tags=["User Stats"])
 app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+app.include_router(
+    savedsearches.router,
+    prefix="/saved-searches",
+    tags=["Saved Searches"],
+)

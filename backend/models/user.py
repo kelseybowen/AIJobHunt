@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from typing import List
 from pydantic import model_validator
@@ -75,15 +75,24 @@ class UserProfileUpdate(BaseModel):
 class UserInDB(UserProfile):
     id: str
 
-class UserCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100)
+
+class UserAuthBase(BaseModel):
+    """Common fields & logic for Auth models"""
     email: EmailStr
     password: str = Field(..., min_length=8)
+    
+    @field_validator('email')
+    @classmethod
+    def normalize_email(cls, v):
+        return v.lower().strip()
 
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
+class UserCreate(UserAuthBase):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class UserLogin(UserAuthBase):
+    pass
 
 
 def user_helper(user) -> dict:

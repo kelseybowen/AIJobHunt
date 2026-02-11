@@ -8,6 +8,7 @@ from backend.db.mongo import mongo
 from backend.routers import (
     users,
     jobs,
+    jobmatches,
     auth,
     savedsearches,
     userstats,
@@ -48,4 +49,9 @@ app.include_router(
     savedsearches.router,
     prefix="/saved-searches",
     tags=["Saved Searches"],
+)
+app.include_router(
+    jobmatches.router,
+    prefix="/job-matches",
+    tags=["Job Matches"],
 )

@@ -26,7 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(userstats.router, prefix="/users", tags=["User Stats"])
 app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
@@ -35,3 +34,6 @@ app.include_router(
     prefix="/saved-searches",
     tags=["Saved Searches"],
 )
+# /users route must be last 
+app.include_router(users.router, prefix="/users", tags=["Users"])
+# do not add routes after this

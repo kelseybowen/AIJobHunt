@@ -1,13 +1,39 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from backend.db.mongo import get_db
 from backend.models.user import (
     UserCreate,
-    UserLogin
+    UserLogin,
+    UserPreferencesUpdate,
+    UserInDB
 )
 from datetime import datetime, timezone
-from backend.utils.security import hash_password, verify_password, create_access_token
+from backend.utils.security import hash_password, verify_password, create_access_token, get_current_user
 
 router = APIRouter()
+
+@router.put("/preferences")
+async def update_preferences(
+    preferences: UserPreferencesUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    # remove None values from data
+    update_data = {
+        f"preferences.{k}": v 
+        for k, v in preferences.model_dump(exclude_unset=True).items()
+    }
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No valid preference data provided")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    db = get_db()
+    result = await db.users.update_one(
+        {"email": current_user["email"]},
+        {"$set": update_data}
+    )
+
+    if result.modified_count == 0:
+        return {"message": "Preferences were already up to date"}
+    return {"message": "Preferences updated successfully", "data": update_data}
 
 @router.post("/register", status_code=201)
 async def register_user(user_in: UserCreate):
@@ -58,3 +84,11 @@ async def login(credentials: UserLogin):
             "email": user["email"]
         }
     }
+
+@router.get("/me", response_model=UserInDB)
+async def get_me(current_user: dict = Depends(get_current_user)):
+    """
+    Fetches the current authenticated user's profile, 
+    including preferences for pre-filling forms.
+    """
+    return current_user

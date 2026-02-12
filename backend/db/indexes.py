@@ -28,16 +28,23 @@ async def ensure_indexes():
     )
 
     # User Stats
-    await db.userstats.create_index(
+    await db.user_stats.create_index(
         [("user_id", 1)],
         unique=True,
         name="uniq_userstats_user",
     )
 
     # Saved Searches
-    await db.savedsearches.create_index(
+    await db.saved_searches.create_index(
         [("user_id", 1)],
         name="idx_savedsearch_user",
+    )
+
+    # Users
+    await db.users.create_index(
+        [("email", 1)],
+        unique=True,
+        name="uniq_user_email",
     )
 
     # Jobs
@@ -51,7 +58,17 @@ async def ensure_indexes():
     await db.job_matches.create_index(
         [("user_id", 1), ("job_id", 1)],
         unique=True,
+        name="uniq_job_match_user_job",
     )
-    await db.job_matches.create_index("user_id")
-    await db.job_matches.create_index("job_id")
-    await db.job_matches.create_index("relevancy_score")
+    await db.job_matches.create_index(
+        [("user_id", 1)],
+        name="idx_job_matches_user",
+    )
+    await db.job_matches.create_index(
+        [("job_id", 1)],
+        name="idx_job_matches_job",
+    )
+    await db.job_matches.create_index(
+        [("relevancy_score", 1)],
+        name="idx_job_matches_score",
+    )

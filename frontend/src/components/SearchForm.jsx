@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { Form, Button, Row, Col, Card, InputGroup } from 'react-bootstrap';
 import { TagsInput } from "react-tag-input-component";
 
-const SearchForm = ({ onSearch, initialData }) => {
+const SearchForm = ({ onSearch, initialData, onCancel }) => {
   const {
     control,
     handleSubmit,
@@ -100,7 +100,7 @@ const SearchForm = ({ onSearch, initialData }) => {
             </Col>
           </Row>
 
-          {/* Salary inputs remain the same as standard inputs */}
+          {/* Salary inputs */}
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
@@ -130,8 +130,11 @@ const SearchForm = ({ onSearch, initialData }) => {
 
           <div className="d-grid mt-3">
             <Button variant="primary" type="submit" className="py-2 fw-bold">
-              Search
+              Submit
             </Button>
+            <button type="button" onClick={onCancel} className="btn btn-secondary me-2">
+              Cancel
+            </button>
           </div>
         </Form>
       </Card.Body>

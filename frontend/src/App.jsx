@@ -1,6 +1,6 @@
 import React from 'react';
-import { useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import About from './pages/About';
@@ -13,33 +13,11 @@ import TermsOfUse from './pages/TermsOfUse';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import api from './services/api'
 
 
 function App() {
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await api.get('/auth/me');
-        setUser(response.data);
-      } catch (error) {
-        console.error("Session expired or invalid token", error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAuth();
-  }, []);
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -53,15 +31,15 @@ function App() {
 
   return (
     <div className="d-flex flex-column min-vh-100">
-      <Navbar user={user} setUser={setUser} />
+      <Navbar />
       <main className="flex-grow-1">
         <Routes>
 
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
-          <Route path="/login" element={<Login setUser={setUser} />} />
-          <Route path="/register" element={<Register setUser={setUser} />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfUse />} />
 
@@ -69,7 +47,7 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute user={user}>
+              <ProtectedRoute >
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -77,7 +55,7 @@ function App() {
           <Route
             path="/search"
             element={
-              <ProtectedRoute user={user}>
+              <ProtectedRoute >
                 <Search />
               </ProtectedRoute>
             }
@@ -85,7 +63,7 @@ function App() {
           <Route
             path="/results"
             element={
-              <ProtectedRoute user={user}>
+              <ProtectedRoute >
                 <Results />
               </ProtectedRoute>
             }

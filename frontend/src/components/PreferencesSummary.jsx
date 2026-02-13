@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Badge, Row, Col } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
-const PreferencesSummary = ({ preferences }) => {
+const PreferencesSummary = ({ preferences, onEdit }) => {
   if (!preferences) {
     return (
       <Card className="shadow-sm border-0 text-center p-4">
@@ -23,7 +23,12 @@ const PreferencesSummary = ({ preferences }) => {
       <Card.Header className="bg-white border-0 pt-4 px-4">
         <div className="d-flex justify-content-between align-items-center">
           <h5 className="mb-0 fw-bold">Search Preferences</h5>
-          <Link to="/search" className="text-decoration-none small fw-bold">Edit</Link>
+          <button 
+            onClick={onEdit} 
+            className="btn btn-link text-decoration-none small fw-bold p-0"
+          >
+            Edit
+          </button>
         </div>
       </Card.Header>
       <Card.Body className="px-4 pb-4">

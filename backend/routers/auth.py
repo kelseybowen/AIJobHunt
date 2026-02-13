@@ -16,24 +16,25 @@ async def update_preferences(
     preferences: UserPreferencesUpdate,
     current_user: dict = Depends(get_current_user)
 ):
-    # remove None values from data
     update_data = {
         f"preferences.{k}": v 
         for k, v in preferences.model_dump(exclude_unset=True).items()
     }
     if not update_data:
         raise HTTPException(status_code=400, detail="No valid preference data provided")
-    
     update_data["updated_at"] = datetime.now(timezone.utc)
     db = get_db()
-    result = await db.users.update_one(
+    await db.users.update_one(
         {"email": current_user["email"]},
         {"$set": update_data}
     )
+    updated_user = await db.users.find_one({"email": current_user["email"]})
+    updated_user["id"] = str(updated_user["_id"])
+    del updated_user["_id"]
+    if "password" in updated_user: 
+        del updated_user["password"]
+    return updated_user
 
-    if result.modified_count == 0:
-        return {"message": "Preferences were already up to date"}
-    return {"message": "Preferences updated successfully", "data": update_data}
 
 @router.post("/register", status_code=201)
 async def register_user(user_in: UserCreate):

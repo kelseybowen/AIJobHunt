@@ -42,8 +42,6 @@ const Login = () => {
     };
     try {
       const response = await api.post('/auth/login', devCredentials);
-      // DEBUGGING:
-      console.log("Backend Response:", response.data);
       const { access_token, user } = response.data;
       if (user) {
         login(access_token, user);

@@ -3,13 +3,15 @@ import api from '../services/api';
 import PreferencesSummary from '../components/PreferencesSummary';
 import DashboardCard from '../components/DashboardCard';
 import { Container, Row, Col, Spinner } from 'react-bootstrap';
-import SearchForm from '../components/SearchForm';
+import SearchForm from '../components/PreferencesForm';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
   const { user, login, loading: authLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
+
+  console.log("Dashboard rendering. User state is:", user);
 
   const handleUpdate = async (formData) => {
     setUpdating(true);
@@ -26,18 +28,26 @@ const Dashboard = () => {
     }
   };
 
-if (authLoading || !user) {
+  if (authLoading) {
     return (
-      <Container className="d-flex flex-column justify-content-center align-items-center vh-100">
-        <Spinner animation="border" variant="primary" size="lg" />
-        <p className="mt-3 text-muted fw-medium">Syncing your profile...</p>
+      <Container className="d-flex justify-content-center align-items-center vh-100">
+        <Spinner animation="border" variant="primary" />
+      </Container>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Container className="mt-5 text-center">
+        <Spinner animation="grow" size="sm" variant="secondary" />
+        <p className="text-muted">Loading preferences...</p>
       </Container>
     );
   }
 
   return (
     <Container className="my-4 animate-fade-in">
-      <h2 className="mb-4 fw-bold">Welcome, {user?.full_name || 'User'}</h2>
+      <h2 className="mb-4 fw-bold">Welcome, {user?.name?.split(' ')[0] || 'User'}</h2>
       <Row className="g-4">
         <Col lg={8}>
           {isEditing ? (

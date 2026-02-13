@@ -1,15 +1,16 @@
-import { React, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Form, Button, Row, Col, Card, InputGroup } from 'react-bootstrap';
 import { TagsInput } from "react-tag-input-component";
 
-const SearchForm = ({ onSearch, initialData, onCancel }) => {
+const PreferencesForm = ({ onSearch, initialData, onCancel }) => {
   const {
     control,
+    register,
     handleSubmit,
     reset,
     watch,
-    formState: { errors }
+    formState: { errors, isSubmitting }
   } = useForm({
     defaultValues: {
       target_roles: [],
@@ -26,16 +27,15 @@ const SearchForm = ({ onSearch, initialData, onCancel }) => {
     }
   }, [initialData, reset]);
 
-  const salaryMin = watch("salary_min");
-
   const onSubmit = (data) => {
     const formattedData = {
       ...data,
-      salary_min: parseInt(data.salary_min),
-      salary_max: parseInt(data.salary_max)
+      salary_min: Number(data.salary_min),
+      salary_max: Number(data.salary_max)
     };
     onSearch(formattedData);
   };
+
 
   return (
     <Card className="shadow-sm border-0 mb-4">
@@ -104,37 +104,67 @@ const SearchForm = ({ onSearch, initialData, onCancel }) => {
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label className="small fw-bold text-muted">Min Salary</Form.Label>
-                <InputGroup>
-                  <InputGroup.Text>$</InputGroup.Text>
-                  <Form.Control type="number" {...control.register("salary_min")} />
-                </InputGroup>
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label className="small fw-bold text-muted">Max Salary</Form.Label>
-                <InputGroup>
+                <Form.Label className="small fw-bold text-muted">Minimum Salary ($)</Form.Label>
+                <InputGroup hasValidation>
                   <InputGroup.Text>$</InputGroup.Text>
                   <Form.Control
                     type="number"
-                    {...control.register("salary_max", {
-                      validate: v => parseInt(v) >= parseInt(salaryMin) || "Must be ≥ Min"
+                    {...register('salary_min', {
+                      min: { value: 0, message: 'Salary cannot be negative' },
+                      max: { value: 500000, message: 'Max $500k' }
+                    })}
+                    isInvalid={!!errors.salary_min}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.salary_min?.message}
+                  </Form.Control.Feedback>
+                </InputGroup>
+              </Form.Group>
+            </Col>
+            
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label className="small fw-bold text-muted">Maximum Salary ($)</Form.Label>
+                <InputGroup hasValidation>
+                  <InputGroup.Text>$</InputGroup.Text>
+                  <Form.Control
+                    type="number"
+                    {...register('salary_max', {
+                      validate: (value) => {
+                        const min = watch('salary_min');
+                        if (value && min && Number(value) < Number(min)) {
+                          return "Must be ≥ Minimum";
+                        }
+                        if (Number(value) > 500000) return "Max $500k";
+                        return true;
+                      }
                     })}
                     isInvalid={!!errors.salary_max}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.salary_max?.message}
+                  </Form.Control.Feedback>
                 </InputGroup>
               </Form.Group>
             </Col>
           </Row>
 
-          <div className="d-grid mt-3">
-            <Button variant="primary" type="submit" className="py-2 fw-bold">
-              Submit
+          <div className="d-flex justify-content-center gap-3 mt-4">
+            <Button 
+              variant="primary" 
+              type="submit" 
+              className="px-5 fw-bold"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : 'Save Preferences'}
             </Button>
-            <button type="button" onClick={onCancel} className="btn btn-secondary me-2">
+            <Button 
+              variant='outline-secondary' 
+              onClick={onCancel} 
+              className="px-5 fw-bold"
+            >
               Cancel
-            </button>
+            </Button>
           </div>
         </Form>
       </Card.Body>
@@ -142,4 +172,4 @@ const SearchForm = ({ onSearch, initialData, onCancel }) => {
   );
 };
 
-export default SearchForm;
+export default PreferencesForm;

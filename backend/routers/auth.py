@@ -4,7 +4,8 @@ from backend.models.user import (
     UserCreate,
     UserLogin,
     UserPreferencesUpdate,
-    UserInDB
+    UserInDB,
+    user_helper
 )
 from datetime import datetime, timezone
 from backend.utils.security import hash_password, verify_password, create_access_token, get_current_user
@@ -76,14 +77,11 @@ async def login(credentials: UserLogin):
         )
     # generate token
     access_token = create_access_token(data={"sub": user["email"]})
+    user_dict = user_helper(user)
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "user": {
-            "id": str(user["_id"]),
-            "name": user.get("name"),
-            "email": user["email"]
-        }
+        "user": user_dict
     }
 
 @router.get("/me", response_model=UserInDB)

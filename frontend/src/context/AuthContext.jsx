@@ -31,10 +31,10 @@ export const AuthProvider = ({ children }) => {
   }, [checkAuth]);
 
   const login = (token, userData) => {
+    setUser(userData);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
     console.log("AuthContext: Login function completed for", userData.full_name);
     navigate('/dashboard');
   };

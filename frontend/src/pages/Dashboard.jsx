@@ -3,11 +3,11 @@ import api from '../services/api';
 import PreferencesSummary from '../components/PreferencesSummary';
 import DashboardCard from '../components/DashboardCard';
 import { Container, Row, Col, Spinner } from 'react-bootstrap';
-import SearchForm from '../components/PreferencesForm';
+import PreferencesForm from '../components/PreferencesForm';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
-  const { user, login, loading: authLoading } = useAuth();
+  const { user, login, loading: authLoading, notify } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
 
@@ -19,10 +19,10 @@ const Dashboard = () => {
       const response = await api.put('/auth/preferences', formData);
       const token = localStorage.getItem('token');
       login(token, response.data);
+      notify("Preferences saved successfully!")
       setIsEditing(false);
     } catch (error) {
-      console.error("Failed to update preferences on dashboard:", error);
-      alert("Could not save changes. Please try again.");
+      notify("Failed to save preferences.", "danger");
     } finally {
       setUpdating(false);
     }
@@ -51,7 +51,7 @@ const Dashboard = () => {
       <Row className="g-4">
         <Col lg={8}>
           {isEditing ? (
-            <SearchForm
+            <PreferencesForm
               initialData={user?.preferences}
               onSearch={handleUpdate}
               onCancel={() => setIsEditing(false)}

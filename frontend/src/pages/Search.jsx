@@ -8,12 +8,10 @@ import { useAuth } from '../context/AuthContext';
 
 
 const Search = () => {
-  const { user, login } = useAuth();
+  const { user, login, notify } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchError, setSearchError] = useState("");
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
 
@@ -32,13 +30,11 @@ const Search = () => {
       const response = await api.put('/auth/preferences', formData);
       const token = localStorage.getItem('token');
       login(token, response.data);
-      setToastMessage("Preferences saved successfully!");
-      setShowToast(true);
+      notify("Preferences saved successfully!");
       setIsEditing(false);
       await handleSearch(formData);
     } catch (err) {
-      console.error("Update failed:", err);
-      alert("Failed to save preferences.");
+      notify("Failed to save preferences.", "danger");
     }
   };
 
@@ -68,12 +64,6 @@ const Search = () => {
 
   return (
     <Container className='mx-auto m-5'>
-      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 11 }}>
-        <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg="success">
-          <Toast.Header><strong className="me-auto">System Update</strong></Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
       <h2 className="fw-bold mb-4">Job Search</h2>
 
       {searchError && <Alert variant="danger">{searchError}</Alert>}

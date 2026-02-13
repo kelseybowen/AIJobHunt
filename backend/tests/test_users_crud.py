@@ -1561,3 +1561,109 @@ async def test_jobmatch_score_validation(client):
     )
 
     assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_user_delete_cascades_jobmatches(client):
+    """Test that when a user is deleted,
+    their associated job matches are also deleted"""
+
+    user = await client.post(
+        "/users/",
+        json={"name": "Cascade User", "email": "cascade_user@test.com"},
+    )
+    user_id = user.json()["id"]
+
+    job = await client.post(
+        "/jobs/",
+        json={
+            "external_id": "job-cascade-1",
+            "title": "Engineer",
+            "company": "Tech Co",
+            "description": "Build stuff",
+            "location": "Remote",
+        },
+    )
+    job_id = job.json()["id"]
+
+    match = await client.post(
+        "/job-matches/",
+        json={
+            "user_id": user_id,
+            "job_id": job_id,
+            "relevancy_score": 0.85,
+            "match_reason": "Good fit",
+            "is_active": True,
+            "match_details": {
+                "skills_matched": ["Python"],
+                "skills_missing": [],
+                "overall_compatibility": 0.9,
+            },
+            "user_snapshot": {
+                "preferences_at_match": {},
+                "credentials_at_match": {},
+            },
+        },
+    )
+
+    assert match.status_code == 201
+
+    delete = await client.delete(f"/users/{user_id}")
+    assert delete.status_code == 204
+
+    matches = await client.get(f"/job-matches/user/{user_id}")
+    assert matches.status_code == 200
+    assert matches.json() == []
+
+
+@pytest.mark.asyncio
+async def test_job_delete_cascades_jobmatches(client):
+    """Test that when a job is deleted,
+    its associated job matches are also deleted"""
+
+    user = await client.post(
+        "/users/",
+        json={"name": "Cascade Job User", "email": "cascade_job@test.com"},
+    )
+    user_id = user.json()["id"]
+
+    job = await client.post(
+        "/jobs/",
+        json={
+            "external_id": "job-cascade-2",
+            "title": "Data Scientist",
+            "company": "AI Corp",
+            "description": "Analyze data",
+            "location": "NYC",
+        },
+    )
+    job_id = job.json()["id"]
+
+    match = await client.post(
+        "/job-matches/",
+        json={
+            "user_id": user_id,
+            "job_id": job_id,
+            "relevancy_score": 0.92,
+            "match_reason": "Strong match",
+            "is_active": True,
+            "match_details": {
+                "skills_matched": ["ML"],
+                "skills_missing": ["AWS"],
+                "overall_compatibility": 0.88,
+            },
+            "user_snapshot": {
+                "preferences_at_match": {},
+                "credentials_at_match": {},
+            },
+        },
+    )
+
+    assert match.status_code == 201
+
+    delete = await client.delete(f"/jobs/{job_id}")
+    assert delete.status_code == 204
+
+    matches = await client.get(f"/job-matches/user/{user_id}")
+    assert matches.status_code == 200
+    assert matches.json() == []

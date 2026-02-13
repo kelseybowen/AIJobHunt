@@ -132,16 +132,22 @@ async def delete_job(job_id: str):
     if not ObjectId.is_valid(job_id):
         raise HTTPException(status_code=400, detail="Invalid job ID")
 
+    # Cascading delete on user-job interactions
+    await db.user_job_interactions.delete_many(
+        {"job_id": ObjectId(job_id)}
+    )
+
+    # Cascading delete on job matches
+    await db.job_matches.delete_many(
+        {"job_id": ObjectId(job_id)}
+    )
+
+    # Then delete job
     result = await db.jobs.delete_one(
         {"_id": ObjectId(job_id)}
     )
 
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Job not found")
-
-    # Cascading delete on user-job interactions
-    await db.user_job_interactions.delete_many(
-        {"job_id": ObjectId(job_id)}
-    )
 
     return

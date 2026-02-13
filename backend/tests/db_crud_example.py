@@ -75,7 +75,7 @@ async def main():
         print(f"  ID: {retrieved_user['id']}")
         print(f"  Name: {retrieved_user['name']}")
         print(f"  Email: {retrieved_user['email']}")
-        print(f"  Email: {retrieved_user['preferences']}\n")
+        print(f"  Preferences: {retrieved_user['preferences']}\n")
 
         # ============================================================
         # TEST 3: UPDATE USER (PUT)

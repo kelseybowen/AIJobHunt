@@ -8,6 +8,7 @@ from backend.db.mongo import mongo
 from backend.routers import (
     users,
     jobs,
+    jobmatches,
     auth,
     savedsearches,
     userstats,
@@ -20,6 +21,7 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await mongo.connect(os.getenv("PROD_DB"))
+    await ensure_indexes()
     await ensure_indexes()
     yield
     await mongo.close()
@@ -48,4 +50,9 @@ app.include_router(
     savedsearches.router,
     prefix="/saved-searches",
     tags=["Saved Searches"],
+)
+app.include_router(
+    jobmatches.router,
+    prefix="/job-matches",
+    tags=["Job Matches"],
 )

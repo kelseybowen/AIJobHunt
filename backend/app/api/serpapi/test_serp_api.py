@@ -11,12 +11,43 @@ Note: Requires the google-search-results package
 Install with: pip install google-search-results
 """
 
+import os
+import sys
+
+# This file lives under a folder named 'serpapi', which shadows the pip package.
+# Prefer site-packages so "from serpapi import GoogleSearch" gets the real package.
+_this_dir = os.path.dirname(os.path.abspath(__file__))
+_parent_dir = os.path.dirname(_this_dir)
+_n = lambda p: os.path.normcase(os.path.abspath(p))
+_removed = []
+for path in (_parent_dir, _this_dir):
+    path_n = _n(path)
+    for i, p in enumerate(sys.path):
+        if _n(p) == path_n:
+            sys.path.pop(i)
+            _removed.append(path)
+            break
+# Ensure site-packages is searched before any remaining path that could shadow
+_site_packages = getattr(sys, "path", [])
+_site_packages = [p for p in sys.path if "site-packages" in _n(p)]
+if _site_packages:
+    for p in _site_packages:
+        if p in sys.path:
+            sys.path.remove(p)
+    for p in reversed(_site_packages):
+        sys.path.insert(0, p)
 try:
     from serpapi import GoogleSearch
 except ImportError:
+    for p in reversed(_removed):
+        sys.path.insert(0, p)
     print("Error: serpapi library not found.")
-    print("Please install it with: pip install google-search-results")
+    print("Install in this environment with:")
+    print("  .\\venv\\Scripts\\python.exe -m pip install google-search-results")
     raise
+for p in reversed(_removed):
+    sys.path.insert(0, p)
+
 import json
 import csv
 import os
@@ -32,6 +63,15 @@ load_dotenv(dotenv_path=env_path)
 # SerpAPI Credentials
 # Loaded from environment variables
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+
+try:
+    from backend.app.api.job_schema import export_canonical_to_csv
+except ImportError:
+    import sys
+    _api = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if _api not in sys.path:
+        sys.path.insert(0, _api)
+    from job_schema import export_canonical_to_csv
 
 
 def test_serpapi_google_jobs(query: str = "Software Engineer",
@@ -237,56 +277,16 @@ def normalize_serpapi_job(job: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def export_to_csv(jobs: List[Dict[str, Any]], filename: Optional[str] = None) -> str:
-    """
-    Export job postings to a CSV file.
-    
-    Args:
-        jobs: List of job postings (raw API response)
-        filename: Optional filename (default: serpapi_jobs_YYYYMMDD_HHMMSS.csv)
-    
-    Returns:
-        Path to the created CSV file
-    """
+    """Export job postings to CSV using the canonical schema (same as MongoDB)."""
     if not jobs:
         print("No jobs to export")
         return ""
-    
-    # Create csv directory if it doesn't exist
-    csv_dir = os.path.join(os.path.dirname(__file__), 'csv')
-    os.makedirs(csv_dir, exist_ok=True)
-    
-    # Generate filename if not provided
-    if not filename:
-        timestamp = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-        filename = f"serpapi_{timestamp}.csv"
-    
-    # Save to csv subfolder
-    filepath = os.path.join(csv_dir, filename)
-    
-    # Normalize all jobs
-    normalized_jobs = [normalize_serpapi_job(job) for job in jobs]
-    
-    # Define CSV columns in order
-    fieldnames = [
-        'Company',
-        'Position',
-        'Location',
-        'Tags',
-        'Description',
-        'URL',
-        'Salary_Min',
-        'Salary_Max',
-        'Date',
-        'ID'
-    ]
-    
-    # Write to CSV
-    with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(normalized_jobs)
-    
-    print(f"Exported {len(normalized_jobs)} job postings to {filepath}")
+    csv_dir = os.path.join(os.path.dirname(__file__), "csv")
+    filepath = export_canonical_to_csv(
+        jobs, source="SerpAPI", normalizer=normalize_serpapi_job,
+        csv_dir=csv_dir, filename=filename, file_prefix="serpapi",
+    )
+    print(f"Exported {len(jobs)} job postings to {filepath}")
     return filepath
 
 

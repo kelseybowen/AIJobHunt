@@ -14,16 +14,9 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 
-function App() {
-  const [msg, setMsg] = React.useState("");
-  const [user, setUser] = React.useState(null);
 
-  useEffect(() => {
-    fetch('/api')
-      .then(res => res.json())
-      .then(data => setMsg(data.message))
-      .catch(err => setMsg("API not connected"))
-  }, [])
+function App() {
+  const [user, setUser] = React.useState(null);
 
   return (
     <div className="d-flex flex-column min-vh-100">
@@ -41,7 +34,8 @@ function App() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
 
-        {/* Protected Routes - to implement later
+
+        {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
@@ -50,14 +44,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/results"
-          element={
-            <ProtectedRoute user={user}>
-              <Results />
-            </ProtectedRoute>
-          }
-        /> */}
       </Routes>
       <Footer />
     </div>

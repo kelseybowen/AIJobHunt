@@ -80,7 +80,7 @@ class UserAuthBase(BaseModel):
     """Common fields & logic for Auth models"""
     email: EmailStr
     password: str = Field(..., min_length=8)
-    
+
     @field_validator('email')
     @classmethod
     def normalize_email(cls, v):

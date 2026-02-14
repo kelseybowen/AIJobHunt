@@ -166,6 +166,11 @@ async def delete_user(user_id: str):
         {"user_id": ObjectId(user_id)}
     )
 
+    # Cascading delete on job matches
+    await db.job_matches.delete_many(
+        {"user_id": ObjectId(user_id)}
+    )
+
     # Then delete user
     result = await db.users.delete_one(
         {"_id": ObjectId(user_id)}

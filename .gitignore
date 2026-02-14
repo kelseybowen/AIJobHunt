@@ -6,7 +6,7 @@ frontend/.env.local
 
 # --- Backend (Python) ---
 backend/venv/
-.env
+backend/.env
 backend/*.py[cod]
 backend/*.so
 *.pytest_cache*

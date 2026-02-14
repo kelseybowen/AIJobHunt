@@ -41,6 +41,8 @@ All collections use MongoDB `ObjectId` references for relationships.
 
 # Collection Schemas & Usage
 
+## Schema Notes
+All ISODates should follow the ISO 8601 datetime string in UTC format (e.g., 2026-02-13T15:30:00Z)
 ## users
 
 Stores registered user accounts and profile information.
@@ -74,9 +76,9 @@ Stores registered user accounts and profile information.
 -   Passwords must be securely hashed before insertion.
 -   `preferences` and `credentials` are used by ML for match generation.
 
-## CRUD Examples
+### CRUD Examples
 
-### Create
+#### Create
 
 ``` python
 # Create simple user profile
@@ -104,7 +106,7 @@ payload = {
 response = await client.post("/users/", json=payload)
 ```
 
-### Read
+#### Read
 
 ``` python
 # Get all users
@@ -114,7 +116,7 @@ response = await client.get("/users/")
 response = await client.get(f"/users/{user_id}")
 ```
 
-### Update
+#### Update
 
 ``` python
 # Update simple user profile
@@ -135,7 +137,7 @@ patch = await client.patch(
 )
 ```
 
-### Delete
+#### Delete
 
 ``` python
 # Delete one user
@@ -188,9 +190,9 @@ Stores job postings ingested from external sources.
 -   Soft deletes should toggle `is_active` instead of removing
     documents.
 
-## CRUD Examples
+### CRUD Examples
 
-### Create
+#### Create
 
 ``` python
 payload = {
@@ -217,7 +219,7 @@ payload = {
 response = await client.post("/jobs/", json=payload)
 ```
 
-### Read
+#### Read
 
 ``` python
 # Get all jobs
@@ -227,7 +229,7 @@ response = await client.get("/jobs/")
 response = await client.get(f"/jobs/{job_id}")
 ```
 
-### Update
+#### Update
 
 ``` python
 # Partial update salary range
@@ -242,7 +244,7 @@ patch = await client.patch(
 )
 ```
 
-### Delete
+#### Delete
 
 ``` python
 # Delete one job
@@ -291,9 +293,9 @@ Stores ML-generated job recommendations with scoring and match context.
 
 Only **one job match per (user_id, job_id)** pair is allowed.
 
-## CRUD Examples
+### CRUD Examples
 
-### Create / Upsert
+#### Create / Upsert
 
 ``` python
 # Match one job to one user
@@ -316,14 +318,14 @@ payload = {
 response = await client.post("/job-matches/", json=payload)
 ```
 
-### Read
+#### Read
 
 ``` python
 # Get all job matches for one user
 response = await client.get(f"/job-matches/user/{user_id}")
 ```
 
-### Update
+#### Update
 
 ``` python
 # Partial update relevancy score
@@ -334,7 +336,7 @@ patch = await client.patch(
 
 ```
 
-### Delete
+#### Delete
 
 ``` python
 # Delete one jobmatch
@@ -368,9 +370,9 @@ Stores roles that the user is interested in applying for.
 -   **Unique:** `_id`
 -   Indexed: `user_id`
 
-## CRUD Examples
+### CRUD Examples
 
-### Create / Upsert
+#### Create / Upsert
 
 ``` python
 # Create one saved search
@@ -386,7 +388,7 @@ payload = {
 res = await client.post("/saved-searches/", json=payload)
 ```
 
-### Read
+#### Read
 
 ``` python
 # Get all saved searches for one user
@@ -396,7 +398,7 @@ res = await client.get(f"/saved-searches/user/{user_id}")
 res = await client.get(f"/saved-searches/{search_id}")
 ```
 
-### Update
+#### Update
 
 ``` python
 # Partial update search_name parameter
@@ -415,7 +417,7 @@ put = await client.put(
 )
 ```
 
-### Delete
+#### Delete
 
 ``` python
 # Delete one savedsearch
@@ -449,9 +451,9 @@ Tracks user engagement with job postings.
 
 A user cannot perform the same interaction twice on the same job.
 
-## CRUD Examples
+### CRUD Examples
 
-### Create
+#### Create
 
 ``` python
 # Create a user job interaction of type "viewed"
@@ -465,7 +467,7 @@ response = await client.post(
 )
 ```
 
-### Read
+#### Read
 
 ``` python
 # Get interaction by user
@@ -475,7 +477,7 @@ response = await client.get(f"/interactions/user/{user_id}")
 response = await client.get(f"/interactions/job/{job_id}")
 ```
 
-### Update
+#### Update
 
 ``` python
 # Update interaction status from "viewed" to "saved"
@@ -485,7 +487,7 @@ patch = await client.patch(
 )
 ```
 
-### Delete
+#### Delete
 
 ``` python
 # Delete one user job interaction
@@ -518,22 +520,22 @@ Stores aggregated engagement statistics per user.
 
 Only one stats document per user.
 
-## CRUD Examples
+### CRUD Examples
 
-### Create
+#### Create
 
 ``` python
 # Auto-created upon UserProfile creation
 ```
 
-### Read
+#### Read
 
 ``` python
 # Get user stats for one user
 res = await client.get(f"/users/{user_id}/stats")
 ```
 
-### Update
+#### Update
 
 ``` python
 # Update user stats for one user
@@ -553,7 +555,7 @@ patch = await client.patch(
 )
 ```
 
-### Delete
+#### Delete
 
 ``` python
 # Auto-deleted upon UserProfile deletion

@@ -116,8 +116,12 @@ class JobMatcher:
         # Load the model only when the class is initialized
         self.tfidf: TfidfVectorizer
         self.df: pandas.DataFrame
-        path = os.path.join(os.path.dirname("./"), "model.pkl")
-        with open(path, "rb") as fd:
+        model_path = os.path.join(os.path.dirname("./"), "model.pkl")
+
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model artifact not found at {model_path}. Run train.py first.")
+
+        with open(model_path, "rb") as fd:
             self.tfidf, self.tfidf_matrix, self.df = pickle.load(fd)
 
         # Get the vocabulary
@@ -134,7 +138,7 @@ class JobMatcher:
         Returns: str
         """
         fields = [
-            user_profile.get("target_role", ""),
+            user_profile.get("target_roles", ""),
             user_profile.get("skills", ""),
             user_profile.get("experience_level", "")
         ]
@@ -219,12 +223,11 @@ class JobMatcher:
             missing = self.get_missing_skills(user_vector, index)
 
             results.append({
-                "job_id": str(job_row["_id"]),
-                "title": job_row["title"],
-                "company": job_row["company"],
-                "score": float(score),
-                "match_reason": f"Match Score: {round(score * 100)}%",
-                "top_missing_skill": missing
+                "job_id": str(job_row.get("_id")),
+                "title": job_row.get("title", "Unknown"),
+                "company": job_row.get("company", "Unknown"),
+                "score": round(score, 2),
+                "missing_skill": missing
             })
 
         return results

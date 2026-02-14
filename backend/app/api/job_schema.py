@@ -72,10 +72,13 @@ def _infer_remote_type(location: str) -> str:
     if not location or (location or "").strip() == "":
         return "not provided"
     loc = (location or "").lower()
-    if "remote" in loc or "anywhere" in loc or loc == "n/a":
-        return "remote"
+    # Check hybrid first: hybrid is a more restrictive version of remote. If we checked
+    # remote first, "Remote/Hybrid" or "Hybrid/Remote" would match "remote" and be
+    # incorrectly classified as remote; checking hybrid first ensures accuracy.
     if "hybrid" in loc:
         return "hybrid"
+    if "remote" in loc or "anywhere" in loc or loc == "n/a":
+        return "remote"
     if "onsite" in loc or "on-site" in loc or "in-office" in loc:
         return "onsite"
     # Cannot determine; do not assume onsite

@@ -1,7 +1,12 @@
 from fastapi import FastAPI
-import routes_ml
+from . import routes_ml
 from dotenv import load_dotenv
 
+load_dotenv()
 app = FastAPI()
 
-app.include_router(routes_ml.router, prefix="", tags=["Machine Learning"])
+app.include_router(routes_ml.router, prefix="/api/ml", tags=["Machine Learning"])
+
+@app.get("/")
+def read_root():
+    return {"message": "ML Service is running"}

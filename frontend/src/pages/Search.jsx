@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Toast, ToastContainer, Spinner, Alert } from 'react-bootstrap';
+import { Container, Spinner, Alert } from 'react-bootstrap';
 import api from '../services/api';
 import Results from './Results';
 import PreferencesSummary from '../components/PreferencesSummary';
@@ -43,6 +43,8 @@ const Search = () => {
     setSearchError("");
     try {
       const response = await api.post('/jobs/search', criteria);
+      console.log("Searching for: ", criteria)
+      console.log(response)
       setResults(response.data);
     } catch (err) {
       console.error("Search API Error:", err);

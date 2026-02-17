@@ -265,19 +265,9 @@ Stores ML-generated job recommendations with scoring and match context.
   "_id": ObjectId,
   "user_id": ObjectId (FK, user_id references UserProfile._id),
   "job_id": ObjectId (FK, job_id references JobPosting._id),
-  "relevancy_score": Number (0.0 - 1.0),
-  "matched_at": ISODate,
-  "match_reason": String,
-  "is_active": Boolean,
-  "match_details": {
-    "skills_matched": Array<String>,
-    "skills_missing": Array<String>,
-    "overall_compatibility": Number
-  },
-  "user_snapshot": {
-    "preferences_at_match": Object,
-    "credentials_at_match": Object
-  }
+  "score": Number (0.0 - 1.0),
+  "missing_skills": Array<String>,
+  "match_date": ISODate
 }
 ```
 
@@ -287,7 +277,7 @@ Stores ML-generated job recommendations with scoring and match context.
 -   **Unique:** `(user_id, job_id)`
 -   Indexed: `user_id`
 -   Indexed: `job_id`
--   Indexed: `relevancy_score`
+-   Indexed: `score`
 
 ### Important Constraint
 
@@ -302,17 +292,8 @@ Only **one job match per (user_id, job_id)** pair is allowed.
 payload = {
     "user_id": {user_id},
     "job_id": {job_id},
-    "relevancy_score": 0.87,
-    "match_reason": "Strong ML alignment",
-    "match_details": {
-        "skills_matched": ["Python", "ML"],
-        "skills_missing": ["Docker"],
-        "overall_compatibility": 0.9,
-    },
-    "user_snapshot": {
-        "preferences_at_match": {"location": "Remote"},
-        "credentials_at_match": {"years_experience": 3},
-    },
+    "score": 0.87,
+    "missing_skills": ["Docker"],
 }
 
 response = await client.post("/job-matches/", json=payload)
@@ -331,7 +312,7 @@ response = await client.get(f"/job-matches/user/{user_id}")
 # Partial update relevancy score
 patch = await client.patch(
     f"/job-matches/{match_id}",
-    json={"relevancy_score": 0.95},
+    json={"score": 0.95},
 )
 
 ```

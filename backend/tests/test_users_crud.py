@@ -1285,17 +1285,8 @@ async def test_create_jobmatch(client):
     payload = {
         "user_id": user.json()["id"],
         "job_id": job.json()["id"],
-        "relevancy_score": 0.87,
-        "match_reason": "Strong ML alignment",
-        "match_details": {
-            "skills_matched": ["Python", "ML"],
-            "skills_missing": ["Docker"],
-            "overall_compatibility": 0.9,
-        },
-        "user_snapshot": {
-            "preferences_at_match": {"location": "Remote"},
-            "credentials_at_match": {"years_experience": 3},
-        },
+        "score": 0.87,
+        "missing_skills": ["Docker"],
     }
 
     res = await client.post("/job-matches/", json=payload)
@@ -1306,10 +1297,10 @@ async def test_create_jobmatch(client):
 
     assert body["user_id"] == payload["user_id"]
     assert body["job_id"] == payload["job_id"]
-    assert body["relevancy_score"] == 0.87
-    assert body["is_active"] is True
+    assert body["score"] == 0.87
+    assert body["missing_skills"] == ["Docker"]
     assert "id" in body
-    assert "matched_at" in body
+    assert "match_date" in body
 
 
 @pytest.mark.asyncio
@@ -1336,16 +1327,8 @@ async def test_jobmatch_duplicate_blocked(client):
     payload = {
         "user_id": user.json()["id"],
         "job_id": job.json()["id"],
-        "relevancy_score": 0.75,
-        "match_details": {
-            "skills_matched": [],
-            "skills_missing": [],
-            "overall_compatibility": 0.7,
-        },
-        "user_snapshot": {
-            "preferences_at_match": {},
-            "credentials_at_match": {},
-        },
+        "score": 0.75,
+        "missing_skills": [],
     }
 
     first = await client.post("/job-matches/", json=payload)
@@ -1381,30 +1364,21 @@ async def test_get_jobmatches_for_user(client):
         json={
             "user_id": user.json()["id"],
             "job_id": job.json()["id"],
-            "relevancy_score": 0.6,
-            "match_details": {
-                "skills_matched": [],
-                "skills_missing": [],
-                "overall_compatibility": 0.6,
-            },
-            "user_snapshot": {
-                "preferences_at_match": {},
-                "credentials_at_match": {},
-            },
+            "score": 0.6,
+            "missing_skills": [],
         },
     )
 
-    res = await client.get(
-        f"/job-matches/user/{user.json()['id']}"
-    )
+    res = await client.get(f"/job-matches/user/{user.json()['id']}")
 
     assert res.status_code == 200
     assert len(res.json()) == 1
+    assert res.json()[0]["score"] == 0.6
 
 
 @pytest.mark.asyncio
 async def test_patch_jobmatch(client):
-    """Test updating the is_active status of an existing job match"""
+    """Test updating score and missing_skills"""
 
     user = await client.post(
         "/users/",
@@ -1427,16 +1401,8 @@ async def test_patch_jobmatch(client):
         json={
             "user_id": user.json()["id"],
             "job_id": job.json()["id"],
-            "relevancy_score": 0.5,
-            "match_details": {
-                "skills_matched": [],
-                "skills_missing": [],
-                "overall_compatibility": 0.5,
-            },
-            "user_snapshot": {
-                "preferences_at_match": {},
-                "credentials_at_match": {},
-            },
+            "score": 0.5,
+            "missing_skills": [],
         },
     )
 
@@ -1444,16 +1410,17 @@ async def test_patch_jobmatch(client):
 
     patch = await client.patch(
         f"/job-matches/{match_id}",
-        json={"is_active": False},
+        json={"score": 0.9},
     )
 
     assert patch.status_code == 200
-    assert patch.json()["is_active"] is False
+    assert patch.json()["score"] == 0.9
 
 
 @pytest.mark.asyncio
 async def test_delete_jobmatch(client):
-    """Test deleting a job match by ID and verifying it no longer exists"""
+    """Test deleting a job match by ID and verifying it no longer
+    exists"""
 
     user = await client.post(
         "/users/",
@@ -1476,16 +1443,8 @@ async def test_delete_jobmatch(client):
         json={
             "user_id": user.json()["id"],
             "job_id": job.json()["id"],
-            "relevancy_score": 0.8,
-            "match_details": {
-                "skills_matched": [],
-                "skills_missing": [],
-                "overall_compatibility": 0.8,
-            },
-            "user_snapshot": {
-                "preferences_at_match": {},
-                "credentials_at_match": {},
-            },
+            "score": 0.8,
+            "missing_skills": [],
         },
     )
 
@@ -1505,16 +1464,8 @@ async def test_jobmatch_invalid_fk(client):
         json={
             "user_id": "invalid",
             "job_id": "invalid",
-            "relevancy_score": 0.5,
-            "match_details": {
-                "skills_matched": [],
-                "skills_missing": [],
-                "overall_compatibility": 0.5,
-            },
-            "user_snapshot": {
-                "preferences_at_match": {},
-                "credentials_at_match": {},
-            },
+            "score": 0.5,
+            "missing_skills": [],
         },
     )
 
@@ -1547,17 +1498,91 @@ async def test_jobmatch_score_validation(client):
         json={
             "user_id": user.json()["id"],
             "job_id": job.json()["id"],
-            "relevancy_score": 1.5,  # invalid
-            "match_details": {
-                "skills_matched": [],
-                "skills_missing": [],
-                "overall_compatibility": 1.5,
-            },
-            "user_snapshot": {
-                "preferences_at_match": {},
-                "credentials_at_match": {},
-            },
+            "score": 1.5,  # invalid
+            "missing_skills": [],
         },
     )
 
     assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_user_delete_cascades_jobmatches(client):
+    """Test that when a user is deleted,
+    their associated job matches are also deleted"""
+
+    user = await client.post(
+        "/users/",
+        json={"name": "Cascade User", "email": "cascade_user@test.com"},
+    )
+    user_id = user.json()["id"]
+
+    job = await client.post(
+        "/jobs/",
+        json={
+            "external_id": "job-cascade-1",
+            "title": "Engineer",
+            "company": "Tech Co",
+            "description": "Build stuff",
+            "location": "Remote",
+        },
+    )
+    job_id = job.json()["id"]
+
+    await client.post(
+        "/job-matches/",
+        json={
+            "user_id": user_id,
+            "job_id": job_id,
+            "score": 0.85,
+            "missing_skills": [],
+        },
+    )
+
+    delete = await client.delete(f"/users/{user_id}")
+    assert delete.status_code == 204
+
+    matches = await client.get(f"/job-matches/user/{user_id}")
+    assert matches.status_code == 200
+    assert matches.json() == []
+
+
+@pytest.mark.asyncio
+async def test_job_delete_cascades_jobmatches(client):
+    """Test that when a job is deleted,
+    its associated job matches are also deleted"""
+
+    user = await client.post(
+        "/users/",
+        json={"name": "Cascade Job User", "email": "cascade_job@test.com"},
+    )
+    user_id = user.json()["id"]
+
+    job = await client.post(
+        "/jobs/",
+        json={
+            "external_id": "job-cascade-2",
+            "title": "Data Scientist",
+            "company": "AI Corp",
+            "description": "Analyze data",
+            "location": "NYC",
+        },
+    )
+    job_id = job.json()["id"]
+
+    await client.post(
+        "/job-matches/",
+        json={
+            "user_id": user_id,
+            "job_id": job_id,
+            "score": 0.92,
+            "missing_skills": ["AWS"],
+        },
+    )
+
+    delete = await client.delete(f"/jobs/{job_id}")
+    assert delete.status_code == 204
+
+    matches = await client.get(f"/job-matches/user/{user_id}")
+    assert matches.status_code == 200
+    assert matches.json() == []

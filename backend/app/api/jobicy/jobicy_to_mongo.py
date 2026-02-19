@@ -1,8 +1,9 @@
 """
 Jobicy API → MongoDB ingestion.
 
-Fetches job postings from the Jobicy API, normalizes them,
-and appends to a MongoDB collection. Uses shared mongo_ingestion_utils.
+Fetches job postings from the Jobicy API for each title in TOP_JOBS (top_jobs.py),
+normalizes them, maps to the canonical job schema (job_schema.to_canonical_document
+via mongo_ingestion_utils), and appends to a MongoDB collection.
 
 Env: MONGODB_CONNECT_STRING, PROD_DB, MONGO_JOBS_COLLECTION (optional).
 Data source label: "Jobicy".
@@ -12,44 +13,59 @@ Run from backend: python app/api/jobicy/jobicy_to_mongo.py
 
 import os
 from typing import List, Dict, Any, Optional
-from dotenv import load_dotenv
-
-_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
-load_dotenv(dotenv_path=_env_path)
 
 try:
-    from backend.app.api.mongo_ingestion_utils import get_mongo_collection, insert_jobs_into_mongo
+    from backend.app.api.data_ingestor import run_ingestion
 except ImportError:
     import sys
     _api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if _api_dir not in sys.path:
         sys.path.insert(0, _api_dir)
-    from mongo_ingestion_utils import get_mongo_collection, insert_jobs_into_mongo
+    from data_ingestor import run_ingestion
 
 try:
-    from backend.app.api.jobicy.test_jobicy_api import test_jobicy_api, normalize_jobicy_job
+    from backend.app.api.top_jobs import TOP_JOBS
 except ImportError:
-    from test_jobicy_api import test_jobicy_api, normalize_jobicy_job
+    import sys
+    _api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if _api_dir not in sys.path:
+        sys.path.insert(0, _api_dir)
+    from top_jobs import TOP_JOBS
+
+try:
+    from backend.app.api.jobicy.jobicy_fetch_top_jobs import fetch_all_top_jobs
+except ImportError:
+    from jobicy_fetch_top_jobs import fetch_all_top_jobs
+
+try:
+    from backend.app.api.jobicy.test_jobicy_api import normalize_jobicy_job
+except ImportError:
+    from test_jobicy_api import normalize_jobicy_job
 
 
 def run(
-    tag: Optional[str] = "Software Engineer",
+    job_titles: Optional[List[str]] = None,
     industry: Optional[str] = None,
     geo: Optional[str] = None,
-    count: Optional[int] = 100,
+    count_per_tag: Optional[int] = 100,
 ) -> int:
-    """Fetch jobs from Jobicy and insert into MongoDB. Returns count inserted."""
-    print("Jobicy → MongoDB")
+    """Fetch jobs from Jobicy for each title in TOP_JOBS (or given list), dedupe, and insert into MongoDB.
+    Documents are normalized then mapped to the canonical schema (job_schema) by insert_jobs_into_mongo.
+    Returns count inserted."""
+    titles = job_titles or TOP_JOBS
+    print("Jobicy → MongoDB (Top Jobs)")
     print("=" * 50)
-    data = test_jobicy_api(tag=tag, industry=industry, geo=geo, count=count)
-    jobs = data.get("jobs", [])
-    print(f"Retrieved {len(jobs)} job postings from Jobicy.")
-    if not jobs:
-        print("No jobs to insert.")
-        return 0
-    collection = get_mongo_collection()
-    count_inserted = insert_jobs_into_mongo(
-        jobs, collection, source="Jobicy", normalizer=normalize_jobicy_job
+    all_jobs = fetch_all_top_jobs(
+        job_titles=titles,
+        industry=industry,
+        geo=geo,
+        count_per_tag=count_per_tag or 100,
+    )
+    print(f"Retrieved {len(all_jobs)} unique job postings from Jobicy.")
+    count_inserted = run_ingestion(
+        source="Jobicy",
+        normalizer=normalize_jobicy_job,
+        fetch_jobs=lambda: all_jobs,
     )
     print(f"Inserted {count_inserted} documents into MongoDB.")
     return count_inserted

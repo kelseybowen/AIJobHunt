@@ -15,23 +15,16 @@ Or from backend/app/api/adzuna:
 
 import os
 from typing import List, Dict, Any, Optional
-from dotenv import load_dotenv
 
-# Load .env from backend folder (absolute path so it works from any cwd)
-_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
-load_dotenv(dotenv_path=_env_path)
-
-# Shared MongoDB ingestion helpers
 try:
-    from backend.app.api.mongo_ingestion_utils import get_mongo_collection, insert_jobs_into_mongo
+    from backend.app.api.data_ingestor import run_ingestion
 except ImportError:
     import sys
     _api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if _api_dir not in sys.path:
         sys.path.insert(0, _api_dir)
-    from mongo_ingestion_utils import get_mongo_collection, insert_jobs_into_mongo
+    from data_ingestor import run_ingestion
 
-# Import existing Adzuna fetch and normalize logic
 try:
     from backend.app.api.adzuna.test_adzuna_api import test_adzuna_api, normalize_adzuna_job
 except ImportError:
@@ -50,21 +43,20 @@ def run(
     print("Adzuna → MongoDB (single keyword)")
     print("=" * 50)
 
-    result = test_adzuna_api(
-        page=page,
-        keywords=keywords,
-        results_per_page=results_per_page,
-    )
-    jobs = result.get("results", [])
+    def fetch_jobs():
+        result = test_adzuna_api(
+            page=page,
+            keywords=keywords,
+            results_per_page=results_per_page,
+        )
+        return result.get("results", [])
+
+    jobs = fetch_jobs()
     print(f"Retrieved {len(jobs)} job postings from Adzuna.")
-
-    if not jobs:
-        print("No jobs to insert.")
-        return 0
-
-    collection = get_mongo_collection()
-    count = insert_jobs_into_mongo(
-        jobs, collection, source="Adzuna", normalizer=normalize_adzuna_job
+    count = run_ingestion(
+        source="Adzuna",
+        normalizer=normalize_adzuna_job,
+        fetch_jobs=lambda: jobs,
     )
     print(f"Inserted {count} documents into MongoDB.")
     return count

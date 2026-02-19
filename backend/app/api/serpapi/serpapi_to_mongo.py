@@ -2,7 +2,7 @@
 SerpAPI (Google Jobs) → MongoDB ingestion.
 
 Fetches job postings from SerpAPI Google Jobs for the same TOP_JOBS list as Adzuna,
-normalizes them, and appends to a MongoDB collection. Uses shared mongo_ingestion_utils.
+normalizes them, and appends to a MongoDB collection. Uses shared data_ingestor and mongo_ingestion_utils.
 
 Env: MONGODB_CONNECT_STRING, PROD_DB, MONGO_JOBS_COLLECTION (optional), SERPAPI_API_KEY.
 Data source label: "SerpAPI".
@@ -15,24 +15,25 @@ Run from project root:  python backend\\app\\api\\serpapi\\serpapi_to_mongo.py  
 
 import os
 from typing import List, Dict, Any, Optional
-from dotenv import load_dotenv
-
-_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
-load_dotenv(dotenv_path=_env_path)
 
 try:
-    from backend.app.api.mongo_ingestion_utils import get_mongo_collection, insert_jobs_into_mongo
+    from backend.app.api.data_ingestor import run_ingestion
 except ImportError:
     import sys
     _api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if _api_dir not in sys.path:
         sys.path.insert(0, _api_dir)
-    from mongo_ingestion_utils import get_mongo_collection, insert_jobs_into_mongo
+    from data_ingestor import run_ingestion
 
 try:
-    from backend.app.api.serpapi.test_serp_api import test_serpapi_google_jobs, normalize_serpapi_job
+    from backend.app.api.serpapi.serpapi_fetch_top_jobs import fetch_all_top_jobs
 except ImportError:
-    from test_serp_api import test_serpapi_google_jobs, normalize_serpapi_job
+    from serpapi_fetch_top_jobs import fetch_all_top_jobs
+
+try:
+    from backend.app.api.serpapi.test_serp_api import normalize_serpapi_job
+except ImportError:
+    from test_serp_api import normalize_serpapi_job
 
 try:
     from backend.app.api.top_jobs import TOP_JOBS
@@ -53,31 +54,12 @@ def run(
     titles = job_titles or TOP_JOBS
     print("SerpAPI (Google Jobs) → MongoDB (Top Jobs)")
     print("=" * 50)
-    all_jobs: List[Dict[str, Any]] = []
-    seen_ids = set()
-    total = len(titles)
-    for idx, query in enumerate(titles, 1):
-        print(f"[{idx}/{total}] Searching for: {query}")
-        try:
-            result = test_serpapi_google_jobs(query=query, location=location, num=num)
-            jobs = result.get("jobs_results", [])
-            for job in jobs:
-                job_id = job.get("job_id") or job.get("title", "") + "|" + job.get("company_name", "")
-                if job_id not in seen_ids:
-                    seen_ids.add(job_id)
-                    all_jobs.append(job)
-            print(f"  ✓ Got {len(jobs)} results (total unique: {len(all_jobs)})")
-        except Exception as e:
-            print(f"  ✗ Error: {e}")
-            continue
-    print("=" * 50)
+    all_jobs = fetch_all_top_jobs(job_titles=titles, location=location, num=num)
     print(f"Retrieved {len(all_jobs)} unique job postings from SerpAPI.")
-    if not all_jobs:
-        print("No jobs to insert.")
-        return 0
-    collection = get_mongo_collection()
-    count = insert_jobs_into_mongo(
-        all_jobs, collection, source="SerpAPI", normalizer=normalize_serpapi_job
+    count = run_ingestion(
+        source="SerpAPI",
+        normalizer=normalize_serpapi_job,
+        fetch_jobs=lambda: all_jobs,
     )
     print(f"Inserted {count} documents into MongoDB.")
     return count

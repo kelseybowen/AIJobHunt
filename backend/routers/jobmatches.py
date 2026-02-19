@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from datetime import datetime, timezone
 from pymongo.errors import DuplicateKeyError
 from pymongo import ReturnDocument
 
@@ -32,7 +31,6 @@ async def create_job_match(payload: JobMatchCreate):
     doc = payload.model_dump()
     doc["user_id"] = user_oid
     doc["job_id"] = job_oid
-    doc["matched_at"] = datetime.now(timezone.utc)
 
     try:
         result = await db.job_matches.insert_one(doc)
@@ -62,9 +60,7 @@ async def update_job_match(match_id: str, updates: JobMatchUpdate):
     db = get_db()
     match_oid = validate_object_id(match_id, "match ID")
 
-    update_data = {
-        k: v for k, v in updates.model_dump(exclude_unset=True).items()
-    }
+    update_data = updates.model_dump(exclude_unset=True)
 
     if not update_data:
         raise HTTPException(400, "No fields provided for update")

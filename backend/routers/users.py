@@ -80,7 +80,7 @@ async def update_user(user_id: str, updates: UserProfileUpdate):
     update_data = {}
 
     for key, value in raw_updates.items():
-        if key == "preferences" and isinstance(value, dict):
+        if key == "preferences" and value is not None:
             for pref_key, pref_val in value.items():
                 update_data[f"preferences.{pref_key}"] = pref_val
         else:
@@ -121,7 +121,7 @@ async def patch_user(user_id: str, updates: UserProfileUpdate):
     update_data: dict = {}
 
     for key, value in raw_updates.items():
-        if key == "preferences" and isinstance(value, dict):
+        if key == "preferences" and value is not None:
             for pref_key, pref_val in value.items():
                 update_data[f"preferences.{pref_key}"] = pref_val
         else:
@@ -163,6 +163,11 @@ async def delete_user(user_id: str):
 
     # Cascading delete on user-job interactions
     await db.user_job_interactions.delete_many(
+        {"user_id": ObjectId(user_id)}
+    )
+
+    # Cascading delete on job matches
+    await db.job_matches.delete_many(
         {"user_id": ObjectId(user_id)}
     )
 

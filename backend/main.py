@@ -1,6 +1,7 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from backend.db.indexes import ensure_indexes
@@ -29,9 +30,22 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+API_SECRET = os.getenv("API_SECRET")
+
+
+@app.middleware("http")
+async def verify_secret_header(request: Request, call_next):
+    secret = request.headers.get("aijobhunt-api-secret")
+    if secret != API_SECRET:
+        return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+    return await call_next(request)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://main.d1lixpon0rveb3.amplifyapp.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,6 +69,6 @@ app.include_router(
     prefix="/job-matches",
     tags=["Job Matches"],
 )
-# /users route must be last 
+# /users route must be last
 app.include_router(users.router, prefix="/users", tags=["Users"])
 # do not add routes after this

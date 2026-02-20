@@ -1,7 +1,5 @@
-import PageHeader from "../components/PageHeader"
-import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Container, Alert, Button, Spinner } from 'react-bootstrap';
+import { Container, Alert, Button } from 'react-bootstrap';
 import JobCard from '../components/JobCard';
 
 const Results = ({ results }) => {
@@ -9,7 +7,12 @@ const Results = ({ results }) => {
   const filters = location.state?.filters;
 
   if (!results || results.length === 0) {
-    return <p className="text-center text-muted">No matches found. Try adjusting your skills.</p>;
+    return <div className="text-center">
+      <p className="text-center text-muted">No matches found. Try adjusting your skills.</p>
+      <Button as={Link} to="/dashboard" variant="outline-secondary">
+        Edit Preferences
+      </Button>
+    </div>
   }
 
   const formatCurrency = (value) => {
@@ -17,8 +20,8 @@ const Results = ({ results }) => {
   };
 
   return (
-    <Container className="mt-5 text-center">
-      <h2 className="fw-bold mb-3">Matching Jobs</h2>
+    <Container className="mt-2 text-center">
+      <h2 className="fw-bold my-3">Matching Jobs ({results.length})</h2>
 
       {filters ? (
         <Alert variant="info" className="text-start d-inline-block shadow-sm">
@@ -29,25 +32,12 @@ const Results = ({ results }) => {
         </Alert>
       ) : null}
 
-      <div className="py-5">
-        <Spinner animation="border" variant="primary" className="mb-3" role="status" />
-        <p className="text-muted">
-          Analyzing your search criteria to find your best match...
-        </p>
-        <Alert variant="warning" className="mt-4">
-          <strong>Integration in progress:</strong> The Job Board API is being connected. Check back soon!
-        </Alert>
-      </div>
-
       <div className="job-list">
         {results.map((job) => (
-          <JobCard key={job.id} job={job} />
+          <JobCard key={job.external_id} job={job} />
         ))}
       </div>
 
-      <Button as={Link} to="/dashboard" variant="outline-secondary">
-        Edit Preferences
-      </Button>
     </Container>
   );
 };

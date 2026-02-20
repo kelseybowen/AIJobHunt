@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import api from '../services/api';
 import PreferencesSummary from '../components/PreferencesSummary';
 import DashboardCard from '../components/DashboardCard';
@@ -10,8 +10,6 @@ const Dashboard = () => {
   const { user, login, loading: authLoading, notify } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
-
-  console.log("Dashboard rendering. User state is:", user);
 
   const handleUpdate = async (formData) => {
     setUpdating(true);

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, Badge, Button, Stack, Row, Col } from 'react-bootstrap';
 
 const JobCard = ({ job }) => {
@@ -6,16 +5,16 @@ const JobCard = ({ job }) => {
     title,
     company,
     location,
-    salary,
+    salary_range,
     skills_matched = [],
     description,
     match_score,
     url
   } = job;
 
-  const formattedSalary = salary 
-    ? `$${salary.toLocaleString()}` 
-    : 'Salary Negotiable';
+  const formatSalary = (number, locale = 'en-US') => {
+    return new Intl.NumberFormat(locale).format(number);
+  };
 
   return (
     <Card className="mb-3 border-0 shadow-sm hover-shadow transition-all">
@@ -33,13 +32,13 @@ const JobCard = ({ job }) => {
               )}
             </div>
             <Card.Subtitle className="mb-3 text-muted fw-medium">
-              <i className="bi bi-building me-1"></i> {company} 
+              <i className="bi bi-building me-1"></i> {company}
               <span className="mx-2 text-silver">|</span>
               <i className="bi bi-geo-alt me-1"></i> {location}
             </Card.Subtitle>
           </Col>
           <Col xs="auto" className="text-end">
-            <div className="fw-bold text-success">{formattedSalary}</div>
+            <div className="fw-bold text-success">${formatSalary(salary_range.min)} - {formatSalary(salary_range.max)}</div>
           </Col>
         </Row>
 
@@ -61,9 +60,9 @@ const JobCard = ({ job }) => {
         </div>
 
         <div className="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
-          <Button 
-            variant="outline-primary" 
-            size="sm" 
+          <Button
+            variant="outline-primary"
+            size="sm"
             className="fw-bold px-3"
             onClick={() => window.open(url, '_blank')}
           >

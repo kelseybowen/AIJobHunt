@@ -68,8 +68,6 @@ const Search = () => {
     <Container className='mx-auto m-5'>
       <h2 className="fw-bold mb-4">Job Search</h2>
 
-      {searchError && <Alert variant="danger">{searchError}</Alert>}
-
       {isEditing ? (
         <PreferencesForm
           initialData={user?.preferences}
@@ -87,7 +85,6 @@ const Search = () => {
 
       {/* Search  Results*/}
       <div className="results-section">
-        <h3 className="mb-4">AI-Matched Results</h3>
 
         {searching ? (
           <div className="text-center py-5">

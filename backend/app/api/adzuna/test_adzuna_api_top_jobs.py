@@ -26,10 +26,11 @@ load_dotenv(dotenv_path=env_path)
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
 ADZUNA_API_KEY = os.getenv("ADZUNA_API_KEY")
 
-# Top job titles (shared across API ingestion scripts)
+# Top job titles and normalizer (shared with adzuna_top_jobs_to_mongo)
 try:
     from backend.app.api.top_jobs import TOP_JOBS
     from backend.app.api.job_schema import export_canonical_to_csv
+    from backend.app.api.adzuna.test_adzuna_api import normalize_adzuna_job
 except ImportError:
     import sys
     _api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -37,6 +38,7 @@ except ImportError:
         sys.path.insert(0, _api_dir)
     from top_jobs import TOP_JOBS
     from job_schema import export_canonical_to_csv
+    from test_adzuna_api import normalize_adzuna_job
 
 
 def search_adzuna_jobs(keywords: str, page: int = 1,
@@ -100,10 +102,11 @@ def fetch_all_top_jobs(job_titles: List[str] = None,
                        app_key: Optional[str] = None,
                        results_per_page: int = 50,
                        max_pages_per_job: int = 1) -> List[Dict[str, Any]]:
-    """Fetch jobs for all top job titles."""
+    """Fetch jobs for all top job titles. Dedupes by job id (same key as adzuna_fetch_top_jobs)."""
     if job_titles is None:
         job_titles = TOP_JOBS
     all_jobs = []
+    seen_ids = set()
     total_jobs = len(job_titles)
     print(f"Searching for {total_jobs} top job titles...")
     print("=" * 60)
@@ -121,8 +124,14 @@ def fetch_all_top_jobs(job_titles: List[str] = None,
                 jobs = result.get('results', [])
                 if jobs:
                     filtered = filter_jobs_by_top_titles(jobs, [job_title])
-                    all_jobs.extend(filtered)
-                    print(f"  ✓ Found {len(filtered)} jobs (page {page})")
+                    new_count = 0
+                    for job in filtered:
+                        job_id = job.get("id")
+                        if job_id is not None and job_id not in seen_ids:
+                            seen_ids.add(job_id)
+                            all_jobs.append(job)
+                            new_count += 1
+                    print(f"  ✓ Found {len(filtered)} jobs (page {page}), {new_count} new unique")
                 else:
                     if page == 1:
                         print(f"  ✗ No jobs found")
@@ -133,38 +142,8 @@ def fetch_all_top_jobs(job_titles: List[str] = None,
             print(f"  ✗ Error: {e}")
             continue
     print("=" * 60)
-    print(f"Total jobs retrieved: {len(all_jobs)}")
+    print(f"Total unique jobs retrieved: {len(all_jobs)}")
     return all_jobs
-
-
-def normalize_adzuna_job(job: Dict[str, Any]) -> Dict[str, Any]:
-    """Normalize Adzuna job data to include all mapped fields."""
-    company = job.get('company', {})
-    if isinstance(company, dict):
-        company = company.get('display_name', 'N/A')
-    location = job.get('location', {})
-    if isinstance(location, dict):
-        location = location.get('display_name', 'Remote')
-    tags = job.get('tags', [])
-    if not tags:
-        title = job.get('title', '').lower()
-        tags = [tag for tag in ['software-engineer', 'remote', 'full-time'] if tag in title]
-    tags_str = '; '.join(tags) if isinstance(tags, list) else str(tags)
-    description = job.get('description', '')
-    clean_description = re.sub(r'<[^>]+>', '', description)
-    clean_description = ' '.join(clean_description.split())
-    return {
-        'Company': company,
-        'Position': job.get('title', 'N/A'),
-        'Location': location,
-        'Tags': tags_str,
-        'Description': clean_description,
-        'URL': job.get('redirect_url', job.get('url', 'N/A')),
-        'Salary_Min': job.get('salary_min', ''),
-        'Salary_Max': job.get('salary_max', ''),
-        'Date': job.get('created', 'N/A'),
-        'ID': job.get('id', 'N/A')
-    }
 
 
 def export_to_csv(jobs: List[Dict[str, Any]], filename: Optional[str] = None) -> str:

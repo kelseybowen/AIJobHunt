@@ -89,17 +89,17 @@ def test_adzuna_api(page: int = 1, keywords: Optional[str] = None,
         response.raise_for_status()
         data = response.json()
         
-        # Post-process to filter by job title
-        if 'results' in data:
-            filtered_results = []
-            for job in data['results']:
-                job_title = job.get('title', '').upper()
-                # Filter by job title - must contain "SOFTWARE ENGINEER"
-                if 'SOFTWARE ENGINEER' not in job_title:
-                    continue
-                
-                filtered_results.append(job)
-            data['results'] = filtered_results
+        # Post-process to filter by job title: keep jobs whose title contains the search keyword
+        if 'results' in data and params.get('what'):
+            search_upper = (params['what'] or '').upper()
+            if search_upper:
+                filtered_results = []
+                for job in data['results']:
+                    job_title = job.get('title', '').upper()
+                    if search_upper not in job_title:
+                        continue
+                    filtered_results.append(job)
+                data['results'] = filtered_results
         
         return data
     except requests.exceptions.RequestException as error:

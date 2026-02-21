@@ -66,12 +66,16 @@ SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 
 try:
     from backend.app.api.job_schema import export_canonical_to_csv
+    from backend.app.api.top_jobs import TOP_JOBS
+    from backend.app.api.serpapi.serpapi_fetch_top_jobs import fetch_all_top_jobs
 except ImportError:
     import sys
     _api = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if _api not in sys.path:
         sys.path.insert(0, _api)
     from job_schema import export_canonical_to_csv
+    from top_jobs import TOP_JOBS
+    from serpapi_fetch_top_jobs import fetch_all_top_jobs
 
 
 def test_serpapi_google_jobs(query: str = "Software Engineer",
@@ -291,78 +295,16 @@ def export_to_csv(jobs: List[Dict[str, Any]], filename: Optional[str] = None) ->
 
 
 if __name__ == "__main__":
-    # Example usage: Software Engineer in United States
+    # Same flow as serpapi_to_mongo: TOP_JOBS, fetch_all_top_jobs, then export to CSV
     try:
-        print("SerpAPI Google Jobs - Software Engineer Search")
+        print("SerpAPI Google Jobs - TOP_JOBS (same as serpapi_to_mongo)")
         print("=" * 60)
-        
-        # Fetch multiple pages to get up to 100 jobs
-        # Google Jobs API returns ~10 jobs per page, so we need to paginate
-        all_jobs = []
-        next_token = None
-        max_jobs = 100
-        page_count = 0
-        max_pages = 10  # Limit to prevent infinite loops
-        
-        print(f"Fetching up to {max_jobs} jobs (may require multiple pages)...")
-        
-        while len(all_jobs) < max_jobs and page_count < max_pages:
-            page_count += 1
-            print(f"  Fetching page {page_count}...", end=" ")
-            
-            result = test_serpapi_google_jobs(
-                query="Software Engineer",
-                location="United States",
-                num=100,  # Request 100 per page (API may still limit to ~10)
-                next_page_token=next_token
-            )
-            
-            page_jobs = result.get("jobs_results", [])
-            all_jobs.extend(page_jobs)
-            next_token = result.get("next_page_token")
-            
-            print(f"Got {len(page_jobs)} jobs (Total: {len(all_jobs)})")
-            
-            # Debug: Check pagination info
-            if not next_token and page_count == 1:
-                raw_response = result.get("raw_response", {})
-                print(f"    Debug: Checking for pagination token...")
-                print(f"    Response keys: {list(raw_response.keys())}")
-                if "pagination" in raw_response:
-                    print(f"    Pagination data: {raw_response.get('pagination')}")
-            
-            # If no more pages or no next token, stop
-            if not next_token or len(page_jobs) == 0:
-                if not next_token:
-                    print(f"    No more pages available (no next_page_token)")
-                break
-        
-        jobs = all_jobs[:max_jobs]  # Limit to exactly max_jobs if we got more
-        print(f"\nRetrieved {len(jobs)} job postings total")
-        
-        # Debug: Show response structure if no jobs
-        if not jobs:
-            print("\nDebugging information:")
-            print(f"Search metadata: {result.get('search_metadata', {})}")
-            print(f"Search parameters: {result.get('search_parameters', {})}")
-            raw_response = result.get("raw_response", {})
-            if "error" in raw_response:
-                print(f"API Error: {raw_response.get('error')}")
-            elif "jobs_results" not in raw_response:
-                print(f"Available keys in response: {list(raw_response.keys())}")
-                # Try to find jobs in alternative locations
-                for key in raw_response.keys():
-                    if 'job' in key.lower() or 'result' in key.lower():
-                        print(f"  Found key '{key}': {type(raw_response[key])}")
-        
-        # Export to CSV
+        jobs = fetch_all_top_jobs(job_titles=TOP_JOBS, location="United States", num=100)
+        print(f"Retrieved {len(jobs)} unique job postings")
         if jobs:
             csv_file = export_to_csv(jobs)
             if csv_file:
                 print(f"\nCSV file created: {csv_file}")
-        
-        # Show sample jobs
-        if jobs:
             print("\nSample jobs (first 2):")
             print(json.dumps(jobs[:2], indent=2))
         else:
@@ -370,7 +312,6 @@ if __name__ == "__main__":
             print("  - API key issue (check if key is valid)")
             print("  - Rate limit reached")
             print("  - No jobs match the search criteria")
-            print("  - API response structure may be different")
     except ValueError as e:
         print(f"Configuration error: {e}")
     except Exception as e:

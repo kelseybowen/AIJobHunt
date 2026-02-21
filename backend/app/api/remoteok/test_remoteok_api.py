@@ -104,8 +104,8 @@ def test_remoteok_api(keywords: Optional[str] = None,
     
     Args:
         keywords: Optional search keywords to filter by (default: "Software Engineer")
-        salary_min: Minimum salary filter (default: 50000)
-        salary_max: Maximum salary filter (default: 150000)
+        salary_min: Optional minimum salary filter; no range filter when None
+        salary_max: Optional maximum salary filter; no range filter when None
         limit: Optional limit on number of results (None = no limit)
         require_salary: Only include jobs with salary information (default: True)
     
@@ -117,10 +117,10 @@ def test_remoteok_api(keywords: Optional[str] = None,
         response.raise_for_status()
         data = response.json()
         
-        # Filter by keywords, location, and salary
+        # Filter by keywords, location, and optional salary range
         search_term = (keywords or "Software Engineer").lower()
-        min_salary = salary_min or 50000
-        max_salary = salary_max or 150000
+        min_salary = salary_min
+        max_salary = salary_max
         
         filtered_jobs = []
         for job in data:
@@ -140,15 +140,15 @@ def test_remoteok_api(keywords: Optional[str] = None,
             if not is_valid_location(location):
                 continue
             
-            # Filter by salary - only include jobs with salary information if required
+            # Filter by salary: require_salary excludes jobs without salary info; range filter only when both min/max set
             if require_salary:
                 job_salary_min, job_salary_max = extract_salary_from_job(job)
                 if job_salary_min is None or job_salary_max is None:
                     continue
                 
-                # Check if salary range overlaps with desired range
-                if job_salary_max < min_salary or job_salary_min > max_salary:
-                    continue
+                if min_salary is not None and max_salary is not None:
+                    if job_salary_max < min_salary or job_salary_min > max_salary:
+                        continue
             
             filtered_jobs.append(job)
             
@@ -212,8 +212,9 @@ def export_to_csv(jobs: List[Dict[str, Any]], filename: Optional[str] = None) ->
     return filepath
 
 
+# REFERENCE ONLY - sample response structure below is comment/documentation only, not run.
 # Sample test data structure (mapped from API response) - FOR REFERENCE ONLY
-# Search criteria: Software Engineer, Remote, $50,000 - $150,000
+# Search criteria: Software Engineer, Remote
 # This is example data showing the expected API response structure
 # Uncomment and use for testing when API is unavailable
 """
@@ -254,12 +255,12 @@ if __name__ == "__main__":
         # Only jobs with salary information will be included
         jobs = test_remoteok_api(
             keywords="Software Engineer",
-            salary_min=50000,
-            salary_max=150000,
+            salary_min=None,
+            salary_max=None,
             limit=None,  # Set to a number to limit results, or None for all
             require_salary=True  # Only include jobs with salary information
         )
-        print(f"Retrieved {len(jobs)} Software Engineer jobs (US/LIKE US/Remote) with salary information ($50k-$150k)")
+        print(f"Retrieved {len(jobs)} Software Engineer jobs (US/LIKE US/Remote) with salary information")
         
         # Export to CSV
         csv_file = export_to_csv(jobs)

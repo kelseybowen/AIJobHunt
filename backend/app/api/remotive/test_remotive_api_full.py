@@ -18,6 +18,15 @@ import re
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
+try:
+    from backend.app.api.job_schema import export_canonical_to_csv
+except ImportError:
+    import sys
+    _api = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if _api not in sys.path:
+        sys.path.insert(0, _api)
+    from job_schema import export_canonical_to_csv
+
 
 def fetch_all_remotive_jobs(category: Optional[str] = None, 
                            search: Optional[str] = None) -> Dict[str, Any]:
@@ -156,58 +165,16 @@ def normalize_remotive_job(job: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def export_to_csv(jobs: List[Dict[str, Any]], filename: Optional[str] = None) -> str:
-    """
-    Export job postings to a CSV file.
-    
-    Args:
-        jobs: List of job postings (raw API response)
-        filename: Optional filename (default: remotive_jobs_full_YYYYMMDD_HHMMSS.csv)
-    
-    Returns:
-        Path to the created CSV file
-    """
+    """Export job postings to CSV using the canonical schema (same as MongoDB)."""
     if not jobs:
         print("No jobs to export")
         return ""
-    
-    # Create csv directory if it doesn't exist
-    csv_dir = os.path.join(os.path.dirname(__file__), 'csv')
-    os.makedirs(csv_dir, exist_ok=True)
-    
-    # Generate filename if not provided
-    if not filename:
-        timestamp = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-        filename = f"remotive_full_{timestamp}.csv"
-    
-    # Save to csv subfolder
-    filepath = os.path.join(csv_dir, filename)
-    
-    print(f"Normalizing {len(jobs)} jobs for CSV export...")
-    # Normalize all jobs
-    normalized_jobs = [normalize_remotive_job(job) for job in jobs]
-    
-    # Define CSV columns in order
-    fieldnames = [
-        'Company',
-        'Position',
-        'Location',
-        'Tags',
-        'Description',
-        'URL',
-        'Salary_Min',
-        'Salary_Max',
-        'Date',
-        'ID'
-    ]
-    
-    # Write to CSV
-    print(f"Writing to CSV file...")
-    with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(normalized_jobs)
-    
-    print(f"✓ Exported {len(normalized_jobs)} job postings to {filepath}")
+    csv_dir = os.path.join(os.path.dirname(__file__), "csv")
+    filepath = export_canonical_to_csv(
+        jobs, source="Remotive", normalizer=normalize_remotive_job,
+        csv_dir=csv_dir, filename=filename, file_prefix="remotive_full",
+    )
+    print(f"✓ Exported {len(jobs)} job postings to {filepath}")
     return filepath
 
 

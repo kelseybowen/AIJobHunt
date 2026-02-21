@@ -16,6 +16,17 @@ import re
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
+try:
+    from backend.app.api.job_schema import export_canonical_to_csv
+    from backend.app.api.top_jobs import TOP_JOBS
+except ImportError:
+    import sys
+    _api = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if _api not in sys.path:
+        sys.path.insert(0, _api)
+    from job_schema import export_canonical_to_csv
+    from top_jobs import TOP_JOBS
+
 
 def test_jobicy_api(tag: Optional[str] = None,
                     industry: Optional[str] = None,
@@ -148,60 +159,27 @@ def normalize_jobicy_job(job: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def fetch_top_cs_jobs(geo: str = "usa", 
+def fetch_top_cs_jobs(geo: str = "usa",
                       min_count: int = 100,
-                      use_top_25: bool = True) -> List[Dict[str, Any]]:
+                      job_titles: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """
-    Fetch 100+ top Computer Science jobs by making multiple API calls with different search terms.
-    Uses the top 25 most popular CS job titles from 2026.
+    Fetch jobs by making multiple API calls with different search terms.
+    Job titles default to top_jobs.TOP_JOBS (same as jobicy_fetch_top_jobs / jobicy_to_mongo).
     
     Args:
         geo: Geographic filter (default: "usa")
         min_count: Minimum number of jobs to fetch (default: 100)
-        use_top_25: If True, use top 25 job titles; if False, use top 10 only
+        job_titles: Job title strings to search for; if None, uses top_jobs.TOP_JOBS
     
     Returns:
         List of unique job postings (deduplicated by ID)
     """
-    # Top 25 Most Popular Computer Science Job Titles (2026)
-    top_25_job_titles = [
-        "AI Engineer",
-        "Machine Learning Engineer",
-        "Cybersecurity Analyst",
-        "Software Engineer",
-        "Data Scientist",
-        "Cloud Architect",
-        "Data Engineer",
-        "DevOps Engineer",
-        "AI Consultant",
-        "Technical Product Manager",
-        "Full-Stack Developer",
-        "AI/ML Researcher",
-        "Data Architect",
-        "Security Engineer",
-        "Network Engineer",
-        "Blockchain Developer",
-        "Systems Analyst",
-        "UX/UI Designer",
-        "Datacenter Technician",
-        "Quantitative Researcher",
-        "Mobile App Developer",
-        "Ethical Hacker",
-        "Database Administrator",
-        "SRE",
-        "Solutions Architect"
-    ]
-    
-    # Top 10 for faster searches
-    top_10_job_titles = top_25_job_titles[:10]
-    
-    # Use top 25 or top 10 based on parameter
-    search_terms = top_25_job_titles if use_top_25 else top_10_job_titles
+    search_terms = job_titles if job_titles is not None else TOP_JOBS
     
     all_jobs = []
     seen_ids = set()
     
-    print(f"Fetching Top {len(search_terms)} Computer Science jobs from {geo.upper()}...")
+    print(f"Fetching jobs for {len(search_terms)} titles from {geo.upper()} (top_jobs.TOP_JOBS)...")
     print(f"Target: {min_count}+ jobs\n")
     
     for i, search_term in enumerate(search_terms, 1):
@@ -247,82 +225,37 @@ def fetch_top_cs_jobs(geo: str = "usa",
     
     final_jobs = list(unique_jobs.values())
     
-    print(f"Final count: {len(final_jobs)} unique Computer Science jobs from {geo.upper()}")
+    print(f"Final count: {len(final_jobs)} unique jobs from {geo.upper()}")
     return final_jobs
 
 
 def export_to_csv(jobs: List[Dict[str, Any]], filename: Optional[str] = None) -> str:
-    """
-    Export job postings to a CSV file.
-    
-    Args:
-        jobs: List of job postings (raw API response)
-        filename: Optional filename (default: jobicy_YYYYMMDD_HHMMSS.csv)
-    
-    Returns:
-        Path to the created CSV file
-    """
+    """Export job postings to CSV using the canonical schema (same as MongoDB)."""
     if not jobs:
         print("No jobs to export")
         return ""
-    
-    # Create csv directory if it doesn't exist
-    csv_dir = os.path.join(os.path.dirname(__file__), 'csv')
-    os.makedirs(csv_dir, exist_ok=True)
-    
-    # Generate filename if not provided
-    if not filename:
-        timestamp = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-        filename = f"jobicy_{timestamp}.csv"
-    
-    # Save to csv subfolder
-    filepath = os.path.join(csv_dir, filename)
-    
-    # Normalize all jobs
-    normalized_jobs = [normalize_jobicy_job(job) for job in jobs]
-    
-    # Define CSV columns in order
-    fieldnames = [
-        'Company',
-        'Position',
-        'Location',
-        'Tags',
-        'Description',
-        'URL',
-        'Salary_Min',
-        'Salary_Max',
-        'Date',
-        'ID'
-    ]
-    
-    # Write to CSV
-    with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(normalized_jobs)
-    
-    print(f"Exported {len(normalized_jobs)} job postings to {filepath}")
+    csv_dir = os.path.join(os.path.dirname(__file__), "csv")
+    filepath = export_canonical_to_csv(
+        jobs, source="Jobicy", normalizer=normalize_jobicy_job,
+        csv_dir=csv_dir, filename=filename, file_prefix="jobicy",
+    )
+    print(f"Exported {len(jobs)} job postings to {filepath}")
     return filepath
 
 
 if __name__ == "__main__":
-    # Fetch 100+ Top Computer Science jobs from USA
+    # Fetch 100+ jobs from USA using top_jobs.TOP_JOBS (same as jobicy_to_mongo)
     try:
-        print("Jobicy API - Top Computer Science Jobs Search (100+ roles)")
-        print("Using Top 25 Most Popular CS Job Titles (2026)")
+        print("Jobicy API - Top Jobs Search (same job list as jobicy_to_mongo)")
+        print("Using job titles from top_jobs.TOP_JOBS")
         print("=" * 70)
         print()
         
-        # Fetch multiple batches to get 100+ jobs using top 25 job titles
-        jobs = fetch_top_cs_jobs(
-            geo="usa",
-            min_count=100,
-            use_top_25=True  # Set to False to use only top 10 for faster results
-        )
+        jobs = fetch_top_cs_jobs(geo="usa", min_count=100)
         
         if jobs:
             print(f"\n{'='*70}")
-            print(f"Successfully retrieved {len(jobs)} unique Computer Science jobs from USA")
+            print(f"Successfully retrieved {len(jobs)} unique jobs from USA")
             print(f"{'='*70}\n")
             
             # Export to CSV
@@ -335,30 +268,19 @@ if __name__ == "__main__":
             print("Job Statistics:")
             print(f"{'='*70}")
             
-            # Count by job title (matching top 25)
-            top_titles = [
-                "AI Engineer", "Machine Learning Engineer", "Cybersecurity Analyst",
-                "Software Engineer", "Data Scientist", "Cloud Architect", "Data Engineer",
-                "DevOps Engineer", "AI Consultant", "Technical Product Manager",
-                "Full-Stack Developer", "AI/ML Researcher", "Data Architect", "Security Engineer",
-                "Network Engineer", "Blockchain Developer", "Systems Analyst", "UX/UI Designer",
-                "Datacenter Technician", "Quantitative Researcher", "Mobile App Developer",
-                "Ethical Hacker", "Database Administrator", "SRE", "Solutions Architect"
-            ]
-            
+            # Count by job title (matching TOP_JOBS)
+            top_titles = TOP_JOBS
             title_counts = {}
             for job in jobs:
                 job_title = job.get('jobTitle', '').upper()
-                # Match against top titles
                 for title in top_titles:
                     title_upper = title.upper()
-                    # Check if job title contains the search term
                     if title_upper in job_title or any(word in job_title for word in title_upper.split() if len(word) > 3):
                         title_counts[title] = title_counts.get(title, 0) + 1
                         break
             
             if title_counts:
-                print(f"\nBy Job Title (Top 25 Matches):")
+                print(f"\nBy Job Title (TOP_JOBS):")
                 for title, count in sorted(title_counts.items(), key=lambda x: x[1], reverse=True):
                     print(f"  {title}: {count}")
             

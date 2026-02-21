@@ -21,6 +21,15 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env')
 load_dotenv(dotenv_path=env_path)
 
+try:
+    from backend.app.api.job_schema import export_canonical_to_csv
+except ImportError:
+    import sys
+    _api = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if _api not in sys.path:
+        sys.path.insert(0, _api)
+    from job_schema import export_canonical_to_csv
+
 
 def test_usajobs_api(keywords: Optional[str] = None,
                      page: Optional[int] = None,
@@ -205,71 +214,16 @@ def normalize_usajobs_job(item: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def export_to_csv(items: List[Dict[str, Any]], filename: Optional[str] = None) -> str:
-    """
-    Export job postings to a CSV file.
-    
-    Args:
-        items: List of job items from USAJobs API (SearchResultItems)
-        filename: Optional filename (default: usajobs_jobs_YYYYMMDD_HHMMSS.csv)
-    
-    Returns:
-        Path to the created CSV file
-    """
+    """Export job postings to CSV using the canonical schema (same as MongoDB)."""
     if not items:
         print("No jobs to export")
         return ""
-    
-    # Create csv directory if it doesn't exist
-    csv_dir = os.path.join(os.path.dirname(__file__), 'csv')
-    os.makedirs(csv_dir, exist_ok=True)
-    
-    # Generate filename if not provided
-    if not filename:
-        timestamp = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-        filename = f"usajobs_{timestamp}.csv"
-    
-    # Save to csv subfolder
-    filepath = os.path.join(csv_dir, filename)
-    
-    # Normalize all jobs
-    normalized_jobs = [normalize_usajobs_job(item) for item in items]
-    
-    # Define CSV columns in order
-    fieldnames = [
-        'Company',
-        'Department',
-        'Position',
-        'PositionID',
-        'Location',
-        'LocationDisplay',
-        'JobCategory',
-        'Tags',
-        'Description',
-        'MajorDuties',
-        'Education',
-        'Requirements',
-        'HowToApply',
-        'Benefits',
-        'URL',
-        'Salary_Min',
-        'Salary_Max',
-        'Salary_Rate',
-        'StartDate',
-        'EndDate',
-        'ApplicationCloseDate',
-        'SecurityClearance',
-        'TeleworkEligible',
-        'RemoteIndicator',
-        'ID'
-    ]
-    
-    # Write to CSV
-    with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(normalized_jobs)
-    
-    print(f"Exported {len(normalized_jobs)} job postings to {filepath}")
+    csv_dir = os.path.join(os.path.dirname(__file__), "csv")
+    filepath = export_canonical_to_csv(
+        items, source="USAJobs", normalizer=normalize_usajobs_job,
+        csv_dir=csv_dir, filename=filename, file_prefix="usajobs",
+    )
+    print(f"Exported {len(items)} job postings to {filepath}")
     return filepath
 
 

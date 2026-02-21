@@ -71,7 +71,7 @@ def search_adzuna_jobs(keywords: str, page: int = 1,
         return response.json()
     except requests.exceptions.RequestException as error:
         print(f'Error calling Adzuna API for "{keywords}": {error}')
-        if hasattr(error.response, 'text'):
+        if error.response is not None:
             print(f'Response: {error.response.text}')
         return {'results': []}
 

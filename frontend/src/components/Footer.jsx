@@ -9,7 +9,7 @@ const Footer = () => {
         <Row className="align-items-center">
           <Col md={6} className="text-center text-md-start">
             <span className="text-muted small">
-              © 2026 AI Job Search Capstone. Developed for educational purposes.
+              © 2026 AI Job Hunt Capstone. Developed for educational purposes.
             </span>
           </Col>
           <Col md={6}>

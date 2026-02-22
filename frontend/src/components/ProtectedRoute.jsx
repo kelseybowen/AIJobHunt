@@ -1,12 +1,22 @@
-import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = ({ user, children }) => {
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
   const location = useLocation();
 
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center mt-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
-    // Redirect to login, but save the current location so we can 
-    // send them back after they log in
+    // Redirect them to login, but save the location they were trying to go to
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

@@ -290,41 +290,6 @@ def export_to_csv(jobs: List[Dict[str, Any]], filename: Optional[str] = None) ->
     return filepath
 
 
-def export_to_json(jobs: List[Dict[str, Any]], filename: Optional[str] = None) -> str:
-    """
-    Export raw job postings to a JSON file (same data shown in terminal).
-    
-    Args:
-        jobs: List of job postings (raw API response)
-        filename: Optional filename (default: serpapi_jobs_YYYYMMDD_HHMMSS.json)
-    
-    Returns:
-        Path to the created JSON file
-    """
-    if not jobs:
-        print("No jobs to export to JSON")
-        return ""
-    
-    # Create csv directory if it doesn't exist (reuse same directory as CSV)
-    json_dir = os.path.join(os.path.dirname(__file__), 'csv')
-    os.makedirs(json_dir, exist_ok=True)
-    
-    # Generate filename if not provided
-    if not filename:
-        timestamp = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-        filename = f"serpapi_{timestamp}.json"
-    
-    # Save to csv subfolder (same location as CSV files)
-    filepath = os.path.join(json_dir, filename)
-    
-    # Write raw JSON data (same format as shown in terminal)
-    with open(filepath, 'w', encoding='utf-8') as jsonfile:
-        json.dump(jobs, jsonfile, indent=2, ensure_ascii=False)
-    
-    print(f"Exported {len(jobs)} job postings (raw JSON) to {filepath}")
-    return filepath
-
-
 if __name__ == "__main__":
     # Example usage: Software Engineer in United States
     try:
@@ -390,20 +355,11 @@ if __name__ == "__main__":
                     if 'job' in key.lower() or 'result' in key.lower():
                         print(f"  Found key '{key}': {type(raw_response[key])}")
         
-        # Export to CSV and JSON
+        # Export to CSV
         if jobs:
-            # Use same timestamp for both files to match them up
-            timestamp = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-            
-            csv_file = export_to_csv(jobs, filename=f"serpapi_{timestamp}.csv")
+            csv_file = export_to_csv(jobs)
             if csv_file:
                 print(f"\nCSV file created: {csv_file}")
-            
-            # Export raw JSON (all jobs, same format as shown in terminal)
-            json_file = export_to_json(jobs, filename=f"serpapi_{timestamp}.json")
-            if json_file:
-                print(f"JSON file created: {json_file}")
-                print(f"  (Contains all {len(jobs)} jobs in raw API format)")
         
         # Show sample jobs
         if jobs:

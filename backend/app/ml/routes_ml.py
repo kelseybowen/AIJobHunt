@@ -45,7 +45,7 @@ async def get_recommendations(request: RecommendationRequest):
     try:
         # Run logic
         # Convert Pydantic model to dict for the logic handler
-        matches = matcher.recommend(request.preferences.dict(), top_n=10)
+        matches = matcher.recommend(request.preferences.model_dump(), top_n=10)
 
         return {
             "status": "success",

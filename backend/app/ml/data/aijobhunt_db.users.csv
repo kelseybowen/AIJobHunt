@@ -1,0 +1,11 @@
+_id,name,email,preferences.desired_locations[0],preferences.target_roles[0],preferences.skills[0],preferences.skills[1],preferences.skills[2],preferences.experience_level,preferences.salary_min,preferences.salary_max,created_at,updated_at
+69825c91e48da677bdeaeb39,Alex Morgan,alex.morgan@test.com,Boston,Research Scientist,Experimental Design,Data Analysis,Python,senior,90000,130000,2026-02-03T20:37:37.173Z,
+69825c91e48da677bdeaeb3a,Dr. Sophia Ramirez,sophia.ramirez@test.com,Chicago,Physician,Patient Care,Diagnostics,Clinical Research,senior,180000,260000,2026-02-03T20:37:37.173Z,
+69825c91e48da677bdeaeb3b,Marco Bianchi,marco.bianchi@test.com,New York,Executive Chef,Menu Design,Italian Cuisine,Team Leadership,mid,65000,95000,2026-02-03T20:37:37.173Z,
+69825c91e48da677bdeaeb3c,Emily Chen,emily.chen@test.com,San Jose,High School Teacher,Curriculum Development,Classroom Management,,mid,60000,90000,2026-02-03T20:37:37.174Z,
+69825c91e48da677bdeaeb3d,James O'Connor,james.oconnor@test.com,Denver,Electrician,Wiring,Troubleshooting,Safety Compliance,senior,70000,110000,2026-02-03T20:37:37.174Z,
+69825c91e48da677bdeaeb3e,Lena Fischer,lena.fischer@test.com,Remote,Graphic Designer,Adobe Illustrator,Brand Design,,junior,50000,75000,2026-02-03T20:37:37.174Z,
+69825c91e48da677bdeaeb3f,Daniel Brooks,daniel.brooks@test.com,Atlanta,Marketing Manager,SEO,Campaign Strategy,Analytics,mid,85000,120000,2026-02-03T20:37:37.174Z,
+69825c91e48da677bdeaeb40,Aisha Khan,aisha.khan@test.com,Las Vegas,Hotel Operations Manager,Customer Service,Staff Management,,senior,75000,115000,2026-02-03T20:37:37.174Z,
+69825c91e48da677bdeaeb41,Robert Greene,robert.greene@test.com,Washington DC,Policy Analyst,Policy Research,Writing,Data Interpretation,mid,80000,120000,2026-02-03T20:37:37.174Z,
+69825c91e48da677bdeaeb42,Chris Johnson,chris.johnson@test.com,Seattle,Cloud Engineer,AWS,Terraform,Python,senior,140000,200000,2026-02-03T20:37:37.174Z,

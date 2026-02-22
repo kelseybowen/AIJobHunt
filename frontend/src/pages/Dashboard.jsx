@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import api from '../services/api';
 import PreferencesSummary from '../components/PreferencesSummary';
 import DashboardCard from '../components/DashboardCard';
+import DataPullControl from '../components/DataPullControl';
 import { Container, Row, Col, Spinner } from 'react-bootstrap';
 import PreferencesForm from '../components/PreferencesForm';
 import { useAuth } from '../context/AuthContext';
@@ -74,6 +75,7 @@ const Dashboard = () => {
               The AI agent is optimizing for <strong>{user?.preferences?.skills?.length || 0}</strong> listed skills.
             </p>
           </DashboardCard>
+          <DataPullControl />
         </Col>
       </Row>
     </Container>

@@ -12,8 +12,7 @@ def build_model():
     df = pd.read_csv('data/adzuna_top25_20260123_20_17_49.csv')
 
     # Clean Data
-    df['cleaned_tokens'] = df['Description'].apply(clean_text)
-    df['processed_text'] = df['cleaned_tokens'].apply(lambda x: " ".join(x))
+    df['processed_text'] = df['Description'].apply(clean_text)
 
     # Perform TD-IDF Vectorizer
     tfidf = TfidfVectorizer(

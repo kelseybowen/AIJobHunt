@@ -9,12 +9,22 @@ Auth: None
 Coverage: Tech focused roles sourced from many ATS systems
 """
 
+import os
 import requests
 import json
 import csv
 import re
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+
+try:
+    from backend.app.api.job_schema import export_canonical_to_csv
+except ImportError:
+    import sys
+    _api = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if _api not in sys.path:
+        sys.path.insert(0, _api)
+    from job_schema import export_canonical_to_csv
 
 
 def extract_salary_from_job(job: Dict[str, Any]) -> tuple[Optional[int], Optional[int]]:
@@ -94,8 +104,8 @@ def test_remoteok_api(keywords: Optional[str] = None,
     
     Args:
         keywords: Optional search keywords to filter by (default: "Software Engineer")
-        salary_min: Minimum salary filter (default: 50000)
-        salary_max: Maximum salary filter (default: 150000)
+        salary_min: Optional minimum salary filter; no range filter when None
+        salary_max: Optional maximum salary filter; no range filter when None
         limit: Optional limit on number of results (None = no limit)
         require_salary: Only include jobs with salary information (default: True)
     
@@ -107,10 +117,10 @@ def test_remoteok_api(keywords: Optional[str] = None,
         response.raise_for_status()
         data = response.json()
         
-        # Filter by keywords, location, and salary
+        # Filter by keywords, location, and optional salary range
         search_term = (keywords or "Software Engineer").lower()
-        min_salary = salary_min or 50000
-        max_salary = salary_max or 150000
+        min_salary = salary_min
+        max_salary = salary_max
         
         filtered_jobs = []
         for job in data:
@@ -130,15 +140,15 @@ def test_remoteok_api(keywords: Optional[str] = None,
             if not is_valid_location(location):
                 continue
             
-            # Filter by salary - only include jobs with salary information if required
+            # Filter by salary: require_salary excludes jobs without salary info; range filter only when both min/max set
             if require_salary:
                 job_salary_min, job_salary_max = extract_salary_from_job(job)
                 if job_salary_min is None or job_salary_max is None:
                     continue
                 
-                # Check if salary range overlaps with desired range
-                if job_salary_max < min_salary or job_salary_min > max_salary:
-                    continue
+                if min_salary is not None and max_salary is not None:
+                    if job_salary_max < min_salary or job_salary_min > max_salary:
+                        continue
             
             filtered_jobs.append(job)
             
@@ -189,62 +199,22 @@ def normalize_job_data(job: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def export_to_csv(jobs: List[Dict[str, Any]], filename: Optional[str] = None) -> str:
-    """
-    Export job postings to a CSV file.
-    
-    Args:
-        jobs: List of job postings (raw API response)
-        filename: Optional filename (default: remoteok_jobs_YYYYMMDD_HHMMSS.csv)
-    
-    Returns:
-        Path to the created CSV file
-    """
+    """Export job postings to CSV using the canonical schema (same as MongoDB)."""
     if not jobs:
         print("No jobs to export")
         return ""
-    
-    # Create csv directory if it doesn't exist
-    import os
-    csv_dir = os.path.join(os.path.dirname(__file__), 'csv')
-    os.makedirs(csv_dir, exist_ok=True)
-    
-    # Generate filename if not provided
-    if not filename:
-        timestamp = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-        filename = f"remoteok_{timestamp}.csv"
-    
-    # Save to csv subfolder
-    filepath = os.path.join(csv_dir, filename)
-    
-    # Normalize all jobs
-    normalized_jobs = [normalize_job_data(job) for job in jobs]
-    
-    # Define CSV columns in order
-    fieldnames = [
-        'Company',
-        'Position',
-        'Location',
-        'Tags',
-        'Description',
-        'URL',
-        'Salary_Min',
-        'Salary_Max',
-        'Date',
-        'ID'
-    ]
-    
-    # Write to CSV
-    with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(normalized_jobs)
-    
-    print(f"Exported {len(normalized_jobs)} job postings to {filepath}")
+    csv_dir = os.path.join(os.path.dirname(__file__), "csv")
+    filepath = export_canonical_to_csv(
+        jobs, source="RemoteOK", normalizer=normalize_job_data,
+        csv_dir=csv_dir, filename=filename, file_prefix="remoteok",
+    )
+    print(f"Exported {len(jobs)} job postings to {filepath}")
     return filepath
 
 
+# REFERENCE ONLY - sample response structure below is comment/documentation only, not run.
 # Sample test data structure (mapped from API response) - FOR REFERENCE ONLY
-# Search criteria: Software Engineer, Remote, $50,000 - $150,000
+# Search criteria: Software Engineer, Remote
 # This is example data showing the expected API response structure
 # Uncomment and use for testing when API is unavailable
 """
@@ -285,12 +255,12 @@ if __name__ == "__main__":
         # Only jobs with salary information will be included
         jobs = test_remoteok_api(
             keywords="Software Engineer",
-            salary_min=50000,
-            salary_max=150000,
+            salary_min=None,
+            salary_max=None,
             limit=None,  # Set to a number to limit results, or None for all
             require_salary=True  # Only include jobs with salary information
         )
-        print(f"Retrieved {len(jobs)} Software Engineer jobs (US/LIKE US/Remote) with salary information ($50k-$150k)")
+        print(f"Retrieved {len(jobs)} Software Engineer jobs (US/LIKE US/Remote) with salary information")
         
         # Export to CSV
         csv_file = export_to_csv(jobs)

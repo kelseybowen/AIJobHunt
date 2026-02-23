@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import api from '../services/api';
+import { Container, Row, Col, Spinner, Stack } from 'react-bootstrap';
+import { useAuth } from '../context/AuthContext';
 import PreferencesSummary from '../components/PreferencesSummary';
 import DashboardCard from '../components/DashboardCard';
 import DataPullControl from '../components/DataPullControl';
-import { Container, Row, Col, Spinner } from 'react-bootstrap';
 import PreferencesForm from '../components/PreferencesForm';
-import { useAuth } from '../context/AuthContext';
+import SavedJobs from '../components/SavedJobs';
 
 const Dashboard = () => {
   const { user, login, loading: authLoading, notify } = useAuth();
@@ -49,31 +50,48 @@ const Dashboard = () => {
       <h2 className="mb-4 fw-bold">Welcome, {user?.name?.split(' ')[0] || 'User'}</h2>
       <Row className="g-4">
         <Col lg={8}>
-          {isEditing ? (
-            <PreferencesForm
-              initialData={user?.preferences}
-              onSearch={handleUpdate}
-              onCancel={() => setIsEditing(false)}
-              isSubmitting={updating}
-            />
-          ) : (
-            <PreferencesSummary
-              preferences={user?.preferences}
-              onEdit={() => setIsEditing(true)}
-            />
-          )}
+          <Stack gap={4}>
+            {isEditing ? (
+              <PreferencesForm
+                initialData={user?.preferences || {
+                  target_roles: [],
+                  skills: [],
+                  desired_locations: [],
+                  salary_min: 0,
+                  salary_max: 150000
+                }}
+                onSearch={handleUpdate}
+                onCancel={() => setIsEditing(false)}
+                isSubmitting={updating}
+              />
+            ) : (
+              <PreferencesSummary
+                preferences={user?.preferences}
+                onEdit={() => setIsEditing(true)}
+              />
+            )}
+
+            <DashboardCard
+              title="Saved for Later"
+              icon={<i className="bi bi-bookmark-heart"></i>}
+            >
+              <SavedJobs />
+            </DashboardCard>
+          </Stack>
         </Col>
 
         <Col lg={4}>
-          <DashboardCard
-            title="Search Insight"
-            icon={<i className="bi bi-cpu"></i>}
-          >
-            <p className="small text-muted mb-0">
-              The AI agent is optimizing for <strong>{user?.preferences?.skills?.length || 0}</strong> listed skills.
-            </p>
-          </DashboardCard>
-          <DataPullControl />
+          <Stack gap={4}>
+            <DashboardCard
+              title="Search Insight"
+              icon={<i className="bi bi-cpu"></i>}
+            >
+              <p className="small text-muted mb-0">
+                The AI agent is optimizing for <strong>{user?.preferences?.skills?.length || 0}</strong> listed skills.
+              </p>
+            </DashboardCard>
+            <DataPullControl />
+          </Stack>
         </Col>
       </Row>
     </Container>

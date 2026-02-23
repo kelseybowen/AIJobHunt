@@ -17,12 +17,17 @@ const Search = () => {
 
   useEffect(() => {
     if (user) {
-      const hasCriteria = user.preferences?.skills?.length > 0 || user.preferences?.target_roles?.length > 0;
-      if (hasCriteria && results.length === 0) {
-        handleSearch(user.preferences);
-      }
-      setLoading(false);
+      const hasSkills = user.preferences?.skills?.length > 0;
+      const hasRoles = user.preferences?.target_roles?.length > 0;
+      const hasCriteria = hasSkills || hasRoles;
+      if (!hasCriteria) {
+      setIsEditing(true);
+    } else if (results.length === 0) {
+      handleSearch(user.preferences);
     }
+    
+    setLoading(false);
+  }
   }, [user]);
 
   const handlePreferenceUpdate = async (formData) => {

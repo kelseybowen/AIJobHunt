@@ -58,16 +58,14 @@ const Home = () => {
         </Container>
       </section>
 
-      {/* Feature Section using your reusable Grid */}
       <Container className="py-5">
         <div className="text-center mb-5">
-          <h2 className="fw-bold">How it Works</h2>
+          <h2 className="fw-bold">How It Works</h2>
           <p className="text-muted">A streamlined path to your next opportunity.</p>
         </div>
         
         <FeatureGrid items={homeFeatures} columns={4} />
 
-        {/* Secondary CTA */}
         <div className="bg-light rounded-4 p-5 text-center mt-5 shadow-sm border">
           <h3 className="fw-bold mb-3">Ready to bridge the gap?</h3>
           <p className="text-secondary mb-4 mx-auto" style={{ maxWidth: '600px' }}>

@@ -8,7 +8,7 @@ Mongo-only logic (get_mongo_collection, insert_jobs_into_mongo) stays in mongo_i
 Only *_to_mongo.py scripts use this module; test_*.py do not.
 """
 
-from typing import List, Dict, Any, Callable
+from typing import Iterable, Dict, Any, Callable
 
 import os
 

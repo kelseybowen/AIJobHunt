@@ -28,11 +28,19 @@ except ImportError:
 try:
     from backend.app.api.serpapi.serpapi_fetch_top_jobs import fetch_all_top_jobs
 except ImportError:
+    import sys
+    _serpapi_dir = os.path.dirname(os.path.abspath(__file__))
+    if _serpapi_dir not in sys.path:
+        sys.path.insert(0, _serpapi_dir)
     from serpapi_fetch_top_jobs import fetch_all_top_jobs
 
 try:
     from backend.app.api.serpapi.test_serp_api import normalize_serpapi_job
 except ImportError:
+    import sys
+    _serpapi_dir = os.path.dirname(os.path.abspath(__file__))
+    if _serpapi_dir not in sys.path:
+        sys.path.insert(0, _serpapi_dir)
     from test_serp_api import normalize_serpapi_job
 
 try:

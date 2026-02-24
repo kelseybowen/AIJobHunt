@@ -9,6 +9,7 @@ const Results = ({ results }) => {
   const { user, loading } = useAuth();
   const [savedJobIds, setSavedJobIds] = useState(new Set());
   const filters = location.state?.filters;
+  const fetch_url = import.meta.env.VITE_API_URL;
 
   // Get saved jobs to display saved status on JobCard
   useEffect(() => {
@@ -16,7 +17,7 @@ const Results = ({ results }) => {
       if (!user?.id) return;
 
       try {
-        const response = await fetch(`http://localhost:8000/interactions/user/${user.id}`);
+        const response = await fetch(`${fetch_url}/interactions/user/${user.id}`);
         if (response.ok) {
           const interactions = await response.json();
           const savedIds = new Set(

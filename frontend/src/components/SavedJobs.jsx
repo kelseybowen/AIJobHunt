@@ -8,12 +8,13 @@ const SavedJobs = () => {
   const { user } = useAuth();
   const [savedJobs, setSavedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const fetch_url = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchSaved = async () => {
       if (!user?.id) return;
       try {
-        const res = await fetch(`http://localhost:8000/interactions/user/${user.id}`);
+        const res = await fetch(`${fetch_url}/interactions/user/${user.id}`);
         const interactions = await res.json();
         const savedIds = interactions
           .filter(i => i.interaction_type === 'saved')
@@ -23,7 +24,7 @@ const SavedJobs = () => {
           setSavedJobs([]);
           return;
         }
-        const jobsRes = await fetch(`http://localhost:8000/jobs/`);
+        const jobsRes = await fetch(`${fetch_url}/jobs/`);
         const allJobs = await jobsRes.json();
         setSavedJobs(allJobs.filter(j => savedIds.includes(j.id || j._id)));
       } catch (err) {

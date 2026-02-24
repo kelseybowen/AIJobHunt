@@ -43,7 +43,10 @@ def run_ingestion(
     Returns:
         Number of documents inserted, or 0 if no jobs.
     """
-    jobs = fetch_jobs()
+    try:
+        jobs = fetch_jobs()
+    except Exception as e:
+        raise RuntimeError(f"{source} ingestion failed during fetch") from e
     if not jobs:
         return 0
     collection = get_mongo_collection()

@@ -25,7 +25,7 @@ except ImportError:
 def run_ingestion(
     source: str,
     normalizer: Callable[[Dict[str, Any]], Dict[str, Any]],
-    fetch_jobs: Callable[[], List[Dict[str, Any]]],
+    fetch_jobs: Callable[[], Iterable[Dict[str, Any]]],
 ) -> int:
     """
     Load jobs via fetch_jobs(), then insert into MongoDB using mongo_ingestion_utils.

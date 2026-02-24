@@ -13,7 +13,8 @@ from backend.routers import (
     auth,
     savedsearches,
     userstats,
-    userjobinteractions
+    userjobinteractions,
+    ingestion,
 )
 
 load_dotenv()
@@ -69,6 +70,7 @@ app.include_router(
     prefix="/job-matches",
     tags=["Job Matches"],
 )
+app.include_router(ingestion.router, prefix="/ingestion", tags=["Ingestion"])
 # /users route must be last
 app.include_router(users.router, prefix="/users", tags=["Users"])
 # do not add routes after this

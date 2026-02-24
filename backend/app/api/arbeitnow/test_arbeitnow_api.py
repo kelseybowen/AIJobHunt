@@ -17,6 +17,15 @@ import re
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
+try:
+    from backend.app.api.job_schema import export_canonical_to_csv
+except ImportError:
+    import sys
+    _api = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if _api not in sys.path:
+        sys.path.insert(0, _api)
+    from job_schema import export_canonical_to_csv
+
 
 def test_arbeitnow_api(page: Optional[int] = None, 
                        remote_only: bool = True,
@@ -30,8 +39,8 @@ def test_arbeitnow_api(page: Optional[int] = None,
         page: Optional page number for pagination
         remote_only: Filter to only return remote jobs (default: True)
         keywords: Optional search keywords (default: "Software Engineer")
-        salary_min: Minimum salary filter (default: 50000)
-        salary_max: Maximum salary filter (default: 150000)
+        salary_min: Optional minimum salary filter; no filter when None
+        salary_max: Optional maximum salary filter; no filter when None
     
     Returns:
         Dictionary containing job postings from Arbeitnow API (filtered to remote only if requested)
@@ -46,12 +55,12 @@ def test_arbeitnow_api(page: Optional[int] = None,
         response.raise_for_status()
         data = response.json()
         
-        # Filter for remote jobs, keywords, and salary range
+        # Filter for remote jobs, keywords, and optional salary range
         if 'data' in data:
             filtered_jobs = []
             search_term = (keywords or "Software Engineer").lower()
-            min_salary = salary_min or 50000
-            max_salary = salary_max or 150000
+            min_salary = salary_min
+            max_salary = salary_max
             
             for job in data['data']:
                 # Filter by remote
@@ -63,11 +72,10 @@ def test_arbeitnow_api(page: Optional[int] = None,
                 if search_term not in title and 'software engineer' not in title:
                     continue
                 
-                # Filter by salary if available (Arbeitnow may not have salary in all jobs)
-                # If salary info is not available, include the job
-                job_salary = job.get('salary_min') or job.get('salary_max')
-                if job_salary:
-                    if job_salary < min_salary or job_salary > max_salary:
+                # Filter by salary only when both min and max are set (Arbeitnow may not have salary in all jobs)
+                if min_salary is not None and max_salary is not None:
+                    job_salary = job.get('salary_min') or job.get('salary_max')
+                    if job_salary is not None and (job_salary < min_salary or job_salary > max_salary):
                         continue
                 
                 filtered_jobs.append(job)
@@ -114,113 +122,34 @@ def normalize_arbeitnow_job(job: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def export_to_csv(jobs: List[Dict[str, Any]], filename: Optional[str] = None) -> str:
-    """
-    Export job postings to a CSV file.
-    
-    Args:
-        jobs: List of job postings (raw API response)
-        filename: Optional filename (default: arbeitnow_jobs_YYYYMMDD_HHMMSS.csv)
-    
-    Returns:
-        Path to the created CSV file
-    """
+    """Export job postings to CSV using the canonical schema (same as MongoDB)."""
     if not jobs:
         print("No jobs to export")
         return ""
-    
-    # Create csv directory if it doesn't exist
-    csv_dir = os.path.join(os.path.dirname(__file__), 'csv')
-    os.makedirs(csv_dir, exist_ok=True)
-    
-    # Generate filename if not provided
-    if not filename:
-        timestamp = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-        filename = f"arbeitnow_{timestamp}.csv"
-    
-    # Save to csv subfolder
-    filepath = os.path.join(csv_dir, filename)
-    
-    # Normalize all jobs
-    normalized_jobs = [normalize_arbeitnow_job(job) for job in jobs]
-    
-    # Define CSV columns in order
-    fieldnames = [
-        'Company',
-        'Position',
-        'Location',
-        'Tags',
-        'Description',
-        'URL',
-        'Salary_Min',
-        'Salary_Max',
-        'Date',
-        'ID'
-    ]
-    
-    # Write to CSV
-    with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(normalized_jobs)
-    
-    print(f"Exported {len(normalized_jobs)} job postings to {filepath}")
+    csv_dir = os.path.join(os.path.dirname(__file__), "csv")
+    filepath = export_canonical_to_csv(
+        jobs, source="Arbeitnow", normalizer=normalize_arbeitnow_job,
+        csv_dir=csv_dir, filename=filename, file_prefix="arbeitnow",
+    )
+    print(f"Exported {len(jobs)} job postings to {filepath}")
     return filepath
 
 
-# Sample test data structure (mapped from API response)
-# Search criteria: Software Engineer, Remote, $50,000 - $150,000
-sample_arbeitnow_response = {
-    "data": [
-        {
-            "id": "arbeitnow-001",
-            "title": "Software Engineer",
-            "company_name": "TechFlow Solutions",
-            "location": "Remote",
-            "remote": True,
-            "tags": ["software-engineer", "python", "javascript", "remote", "full-time"],
-            "description": "We are seeking a Software Engineer to design and build scalable software applications. You will work with modern programming languages and frameworks to create robust systems. Experience with software development best practices, version control, and cloud platforms preferred. This is a fully remote position with competitive salary.",
-            "url": "https://www.arbeitnow.com/view/job/software-engineer-techflow-001",
-            "salary_min": 70000,
-            "salary_max": 110000,
-            # Normalized fields for testing
-            "company": "TechFlow Solutions",
-            "position": "Software Engineer",
-            "location": "Remote",
-            "tags": ["software-engineer", "python", "javascript", "remote", "full-time"]
-        },
-        {
-            "id": "arbeitnow-002",
-            "title": "Senior Software Engineer",
-            "company_name": "WebTech Pro",
-            "location": "Remote",
-            "remote": True,
-            "tags": ["software-engineer", "senior", "react", "node.js", "remote"],
-            "description": "Join our engineering team as a Senior Software Engineer. You will design and develop complex software systems, mentor junior engineers, and contribute to architectural decisions. Strong experience with software engineering principles and modern development practices required. Fully remote position with excellent compensation.",
-            "url": "https://www.arbeitnow.com/view/job/senior-software-engineer-webtech-002",
-            "salary_min": 100000,
-            "salary_max": 150000,
-            # Normalized fields for testing
-            "company": "WebTech Pro",
-            "position": "Senior Software Engineer",
-            "location": "Remote",
-            "tags": ["software-engineer", "senior", "react", "node.js", "remote"]
-        }
-    ]
-}
+# Response shape: data array of jobs with id, title, company_name, location, remote, tags, description, url, salary_min, salary_max.
 
 
 if __name__ == "__main__":
-    # Example usage: Software Engineer, Remote, $50,000 - $150,000
+    # Example usage: Software Engineer, Remote (no salary range filter)
     try:
         result = test_arbeitnow_api(
             page=1,
             remote_only=True,
             keywords="Software Engineer",
-            salary_min=50000,
-            salary_max=150000
+            salary_min=None,
+            salary_max=None
         )
         jobs = result.get("data", [])
-        print(f"Retrieved {len(jobs)} Software Engineer remote job postings ($50k-$150k)")
+        print(f"Retrieved {len(jobs)} Software Engineer remote job postings")
         
         # Export to CSV
         if jobs:

@@ -8,12 +8,12 @@ const JobCard = ({ job, initialSaved, onUnsave }) => {
     company,
     location,
     salary_range,
-    skills_matched = [],
+    skills_matched = ["Skill 1", "Skill 2", "Skill 3"],
     description,
     match_score,
     url
   } = job;
-  
+
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -107,17 +107,20 @@ const JobCard = ({ job, initialSaved, onUnsave }) => {
           {description}
         </Card.Text>
 
-        <div className="mb-3">
-          <div className="small fw-bold text-muted mb-2 uppercase tracking-wider" style={{ fontSize: '0.7rem' }}>
+        <div className="d-flex mb-3">
+          <i className='bi bi-lightning-fill text-warning'></i>
+          <div className="small fw-bold text-muted mb-2 uppercase tracking-wider" style={{ fontSize: '0.8rem' }}>
             TOP MATCHING SKILLS:
           </div>
-          <Stack direction="horizontal" gap={1} className="flex-wrap">
-            {skills_matched.map((skill, index) => (
-              <Badge key={index} pill bg="light" text="dark" className="border">
-                {skill}
-              </Badge>
-            ))}
-          </Stack>
+          <div>
+            <Stack direction="horizontal" gap={2} className="flex-wrap mx-2">
+              {skills_matched.map((skill, index) => (
+                <Badge key={index} pill bg="light" text="dark" className="border">
+                  {skill}
+                </Badge>
+              ))}
+            </Stack>
+          </div>
         </div>
 
         <div className="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">

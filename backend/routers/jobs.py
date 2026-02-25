@@ -204,7 +204,7 @@ async def search_jobs(
     try:
         cursor = db.jobs.find(query).limit(50)
         jobs = await cursor.to_list(length=50)
-        return jobs
+        return [job_helper(job) for job in jobs]
 
     except Exception as e:
         print(f"Search error: {e}")

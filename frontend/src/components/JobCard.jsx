@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const JobCard = ({ job, initialSaved, onUnsave }) => {
-  const { title, company, location, salary_range, url } = job;
+  const { id, title, company, location, salary_range, url } = job;
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -14,18 +14,36 @@ const JobCard = ({ job, initialSaved, onUnsave }) => {
     setIsSaved(initialSaved);
     const fetchMatchScore = async () => {
       if (!user?.id) return;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       try {
-        const res = await fetch(`${fetch_url}/matches/user/${user.id}/job/${job.id || job._id}`);
+        const res = await fetch(
+          `${fetch_url}/matches/user/${user.id}/job/${job.id || job._id}`,
+          { signal: controller.signal }
+        );
+
         if (res.ok) {
           const data = await res.json();
           setMatchData(data);
+        } else {
+          setMatchData({ score: null, error: true });
         }
       } catch (err) {
-        console.error("Error fetching match score:", err);
+        if (err.name === 'AbortError') {
+          console.warn("Match fetch timed out");
+        } else {
+          console.error("Error fetching match score:", err);
+        }
+        setMatchData({ score: null, timeout: true });
+      } finally {
+        clearTimeout(timeoutId);
       }
     };
 
     fetchMatchScore();
+    console.log(matchData)
   }, [initialSaved, user?.id, job.id, job._id, fetch_url]);
 
   const handleSaveJob = async () => {
@@ -97,32 +115,34 @@ const JobCard = ({ job, initialSaved, onUnsave }) => {
       <Card.Body className="p-4">
         <Row className="align-items-center">
           <Col xs="auto" className="pe-4 border-end">
-            {matchData ? (
-              <div className="text-center">
-                <div
-                  className={`d-flex align-items-center justify-content-center border border-2 border-${getScoreColor(matchData.score)} rounded-circle shadow-sm`}
-                  style={{ width: '55px', height: '55px', backgroundColor: '#fff' }}
-                >
-                  <span className={`fw-bold text-${getScoreColor(matchData.score)}`} style={{ fontSize: '0.9rem' }}>
-                    {Math.round(matchData.score * 100)}%
-                  </span>
+            <div className="ms-3" style={{ width: '55px' }}>
+              {!matchData ? (
+                <div className="d-flex align-items-center justify-content-center" style={{ height: '55px' }}>
+                  <Spinner animation="border" size="sm" variant="secondary" />
                 </div>
-                <div className="text-muted fw-bold mt-1" style={{ fontSize: '0.6rem', letterSpacing: '0.5px' }}>
-                  AI MATCH
-                </div>
-              </div>
-            ) : (
-              <div className="text-center" style={{ width: '55px' }}>
-                <Spinner animation="border" size="md" variant="secondary" />
-              </div>
-            )}
+              ) : (
+                <>
+                  <div
+                    className={`d-flex align-items-center justify-content-center border border-2 border-${getScoreColor(matchData.score)} rounded-circle shadow-sm`}
+                    style={{ width: '55px', height: '55px', backgroundColor: '#fff' }}
+                  >
+                    <span className={`fw-bold text-${getScoreColor(matchData.score)}`} style={{ fontSize: '0.9rem' }}>
+                      {matchData.score !== null ? `${Math.round(matchData.score * 100)}%` : "--"}
+                    </span>
+                  </div>
+                  <div className="text-muted fw-bold mt-1" style={{ fontSize: '0.6rem', letterSpacing: '0.5px' }}>
+                    AI MATCH
+                  </div>
+                </>
+              )}
+            </div>
           </Col>
 
           <Col className="ps-4">
             <Card.Title className="mb-1 fw-bold text-primary fs-5">
               {title}
             </Card.Title>
-            <Card.Subtitle className="mb-3 text-muted fw-medium">
+            <Card.Subtitle className="mt-1 mb-3 text-muted fw-medium">
               <i className="bi bi-building me-1"></i> {company}
               <span className="mx-2 text-silver">|</span>
               <i className="bi bi-geo-alt me-1"></i> {location}
@@ -132,34 +152,32 @@ const JobCard = ({ job, initialSaved, onUnsave }) => {
           <Col xs="auto" className="text-end">
             <div className="fw-bold text-success fs-5">
               {salary_range?.min && salary_range?.max
-                  ? `$${formatSalary(salary_range.min)} - $${formatSalary(salary_range.max)}`
-                  : "Salary not listed"}
+                ? `$${formatSalary(salary_range.min)} - $${formatSalary(salary_range.max)}`
+                : "Salary not listed"}
             </div>
           </Col>
         </Row>
 
         <hr className="my-3 opacity-10" />
 
-        <div className="d-flex align-items-start mb-3">
+        <div className="d-flex align-items-baseline mb-3">
           <i className='bi bi-lightning-fill text-warning me-2 mt-1'></i>
-          <div>
-            <div className="small fw-bold text-muted mb-2 uppercase tracking-wider" style={{ fontSize: '0.75rem' }}>
-              MISSING SKILLS:
-            </div>
-            <Stack direction="horizontal" gap={2} className="flex-wrap">
-              {missingSkills.length > 0 ? (
-                missingSkills.map((skill, index) => (
-                  <Badge key={index} pill bg="light" text="dark" className="border fw-normal text-secondary" style={{ fontSize: '0.7rem' }}>
-                    {skill}
-                  </Badge>
-                ))
-              ) : (
-                <span className="text-success small" style={{ fontSize: '0.75rem' }}>
-                  <i className="bi bi-check-circle-fill me-1"></i> You have all required skills!
-                </span>
-              )}
-            </Stack>
+          <div className="small fw-bold text-muted mb-2 uppercase tracking-wider" style={{ fontSize: '0.75rem' }}>
+            MISSING SKILLS:
           </div>
+          <Stack direction="horizontal" gap={2} className="flex-wrap mx-2">
+            {missingSkills.length > 0 ? (
+              missingSkills.map((skill, index) => (
+                <Badge key={index} pill bg="light" text="dark" className="border fw-normal text-secondary" style={{ fontSize: '0.7rem' }}>
+                  {skill}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-success small" style={{ fontSize: '0.75rem' }}>
+                <i className="bi bi-check-circle-fill me-1"></i> You have all required skills!
+              </span>
+            )}
+          </Stack>
         </div>
 
         <div className="d-flex justify-content-between align-items-center mt-auto pt-2">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Card, Form, Button } from 'react-bootstrap';
+import { Card, Form, Button, Alert } from 'react-bootstrap';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const INGESTION_TIMEOUT_MS = 120000;
 const SOURCES = [
@@ -16,6 +17,9 @@ const DataPullControl = () => {
   const [status, setStatus] = useState(null);
   const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
+
+  const devCredentialsEmail = import.meta.env.VITE_DEV_BYPASS_EMAIL;
 
   const runOne = async (sourceKey) => {
     const { data } = await api.post(
@@ -32,29 +36,34 @@ const DataPullControl = () => {
     setLoading(true);
     setStatus('Pulling…');
 
-    try {
-      if (source === 'all') {
-        const list = ['adzuna', 'jobicy', 'serpapi'];
-        const out = [];
-        for (const key of list) {
-          setStatus(`Pulling ${key}…`);
-          const data = await runOne(key);
-          out.push(data);
+    if (user.email == devCredentialsEmail) {
+      try {
+        if (source === 'all') {
+          const list = ['adzuna', 'jobicy', 'serpapi'];
+          const out = [];
+          for (const key of list) {
+            setStatus(`Pulling ${key}…`);
+            const data = await runOne(key);
+            out.push(data);
+          }
+          setResults(out);
+          setStatus(null);
+        } else {
+          setStatus(`Pulling ${source}…`);
+          const data = await runOne(source);
+          setResults([data]);
+          setStatus(null);
         }
-        setResults(out);
+      } catch (err) {
+        const message = err.response?.data?.detail || err.message;
+        const failedSource = status ? status.replace('Pulling ', '').replace('…', '') : source;
+        setError(`${failedSource}: ${message}`);
         setStatus(null);
-      } else {
-        setStatus(`Pulling ${source}…`);
-        const data = await runOne(source);
-        setResults([data]);
-        setStatus(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      const message = err.response?.data?.detail || err.message;
-      const failedSource = status ? status.replace('Pulling ', '').replace('…', '') : source;
-      setError(`${failedSource}: ${message}`);
-      setStatus(null);
-    } finally {
+    } else {
+      setError("Action not allowed for non-admin users.");
       setLoading(false);
     }
   };

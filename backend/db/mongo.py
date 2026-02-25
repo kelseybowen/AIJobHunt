@@ -1,7 +1,8 @@
 import os
 from pymongo import AsyncMongoClient
+from dotenv import load_dotenv
 
-
+load_dotenv()
 class MongoManager:
     def __init__(self):
         self.client = None

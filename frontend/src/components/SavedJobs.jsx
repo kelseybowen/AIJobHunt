@@ -12,7 +12,10 @@ const SavedJobs = () => {
 
   useEffect(() => {
     const fetchSaved = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
       try {
         const res = await fetch(`${fetch_url}/interactions/user/${user.id}`);
         const interactions = await res.json();

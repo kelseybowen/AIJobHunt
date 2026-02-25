@@ -131,7 +131,9 @@ const JobCard = ({ job, initialSaved, onUnsave }) => {
 
           <Col xs="auto" className="text-end">
             <div className="fw-bold text-success fs-5">
-              ${formatSalary(salary_range.min)} - {formatSalary(salary_range.max)}
+              {salary_range?.min && salary_range?.max
+                  ? `$${formatSalary(salary_range.min)} - $${formatSalary(salary_range.max)}`
+                  : "Salary not listed"}
             </div>
           </Col>
         </Row>

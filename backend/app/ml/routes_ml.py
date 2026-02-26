@@ -5,6 +5,7 @@ from typing import List, Optional
 from logic import JobMatcher, SemanticJobMatcher
 from mongo_ingestion_utils import get_async_matches_collection
 from datetime import datetime, timezone
+from train import build_semantic_model, build_model
 
 router = APIRouter()
 
@@ -71,3 +72,17 @@ async def get_recommendations(request: RecommendationRequest):
     except Exception as e:
         print(f"ML Recommendation Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate or save recommendations.")
+
+@router.post("/train")
+async def trigger_training():
+    """
+    Manually triggers the ML model training/refresh process.
+    """
+
+    try:
+        build_semantic_model()
+        return {"status": "success", "message": "ML models rebuilt and cached."}
+    except Exception as e:
+        print(f"Training Error: {e}")
+        raise HTTPException(status_code=500,
+                            detail="Failed to rebuild ML models.")

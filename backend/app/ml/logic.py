@@ -6,6 +6,7 @@ import pickle
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sentence_transformers import SentenceTransformer, util
 
 # --- SETUP NLP ---
 nlp = spacy.load("en_core_web_sm")
@@ -109,7 +110,7 @@ def clean_text(text):
 # ---- THE MATCHER -----
 class JobMatcher:
     """
-    Class to implement the job matching logic
+    Class to implement the job matching logic using TF-IDF
     """
 
     def __init__(self):
@@ -231,3 +232,70 @@ class JobMatcher:
             })
 
         return results
+
+class SemanticJobMatcher:
+    """
+    Class to implement the job matching logic using TF-IDF
+    """
+
+    def __init__(self):
+        self.encoder = SentenceTransformer('all-MiniLM-L6-v2')
+
+        base_path = os.path.join(os.path.dirname("./"), "semantic_model.pkl")
+
+        if not os.path.exists(base_path):
+            raise FileNotFoundError(f"Model artifact not found at "
+                                    f"{base_path}. Run train.py first.")
+
+        with open(base_path, "rb") as fd:
+            self.job_embeddings, self.df = pickle.load(fd)
+
+    def get_missing_skills_basic(self, user_skills: list, job_skills_text:
+    str) -> list:
+        """
+        A fast fallback for missing skills since embeddings don't give exact words.
+        Compares user's explicitly stated skills against the job's processed text.
+        """
+
+        user_skills_lower = [s.lower() for s in user_skills]
+        return []
+
+    def recommend(self, user_preferences: dict, top_n=5):
+        """
+
+        Args:
+            user_preferences:
+            top_n:
+
+        Returns:
+        """
+
+        user_skills = user_preferences.get("skills", [])
+        user_text = (" ".join(user_preferences.get("target_roles", [])) + " "
+                     + " ".join(user_skills))
+
+        # Encode user input
+        user_vector = self.encoder.encode(user_text)
+
+        # Calculate the cosine similarities
+        similarities = util.cos_sim(user_vector, self.job_embeddings)[
+            0].cpu().numpy()
+
+        # Rank Results
+        top_indices = similarities.argsort()[-top_n:][::-1]
+
+        results = []
+        for idx in top_indices:
+            score = float(similarities[idx])
+            if score < 0.20:
+                continue
+
+            job_row = self.df.iloc[idx]
+
+            results.append({
+                "job_id": str(job_row.get("_id")),
+                "title": job_row.get("title", "Unknown"),
+                "company": job_row.get("company", "Unknown"),
+                "score": round(score, 2),
+                "missing_skills": []
+            })

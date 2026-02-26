@@ -1,18 +1,19 @@
 from fastapi import APIRouter, HTTPException, Body
-from jinja2.filters import async_select_or_reject
+from bson import ObjectId
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from logic import JobMatcher
+from logic import JobMatcher, SemanticJobMatcher
+from mongo_ingestion_utils import get_async_matches_collection
+from datetime import datetime, timezone
 
 router = APIRouter()
 
-# Initialize ML Engine
+# LOAD CACHED MODELS
 try:
-    matcher = JobMatcher()
-    print("ML Model loaded successfully.")
-except Exception as e:
-    print(f"Failed to load ML Model: {e}")
-    matcher = None
+    tfidf_matcher = JobMatcher()
+    semantic_matcher = SemanticJobMatcher()
+except FileNotFoundError as e:
+    print(f"Warning: ML models not found. Run train.py first. Details: {e}")
 
 # --- Pydantic Models
 class UserPreferences(BaseModel):
@@ -39,20 +40,34 @@ async def get_recommendations(request: RecommendationRequest):
     Returns:
     """
 
-    if matcher is None:
-        raise HTTPException(status_code=503, detail="ML Service unavailable")
-
+    model_type = "semantic"
     try:
-        # Run logic
-        # Convert Pydantic model to dict for the logic handler
-        matches = matcher.recommend(request.preferences.model_dump(), top_n=10)
+        if model_type == "tfidf":
+            matches = tfidf_matcher.recommend(request.preferences.model_dump(), top_n=10)
+        else:
+            matches = semantic_matcher.recommend(request.preferences.model_dump(), top_n=10)
 
-        return {
-            "status": "success",
-            "count": len(matches),
-            "matches": matches
-        }
+        collection = get_async_matches_collection()
+
+        for match in matches:
+            await collection.update_one(
+                {
+                    "user_id": ObjectId(request.user_id),
+                    "job_id": ObjectId(match["job_id"])
+                },
+                {
+                    "$set": {
+                        "score": match["score"],
+                        "missing_skills": match["missing_skills"],
+                        "match_date": datetime.now(timezone.utc)
+                    }
+                },
+                upsert=True
+            )
+
+        return {"status": "success", "model_used": model_type,
+                "matches": matches}
 
     except Exception as e:
-        print(f"Error generating recommendations: {e}")
-        raise HTTPException(status_code=503, detail="Internal processing error")
+        print(f"ML Recommendation Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate or save recommendations.")

@@ -19,7 +19,7 @@ const PreferencesSummary = ({ preferences, onEdit }) => {
   const { target_roles, desired_locations, skills, salary_min, salary_max } = preferences;
 
   return (
-    <Card className="shadow-sm border-0 mb-4">
+    <Card className="shadow-sm border-0">
       <Card.Header className="bg-white border-0 pt-4 px-4">
         <div className="d-flex justify-content-between align-items-center">
           <h5 className="mb-0 fw-bold">Search Preferences</h5>

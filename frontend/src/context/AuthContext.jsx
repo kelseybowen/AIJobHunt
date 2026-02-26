@@ -29,8 +29,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    setUser(JSON.parse(storedUser));
+  }
+  setLoading(false);
+}, []);
 
   const login = (token, userData, shouldNavigate = false) => {
     setUser(userData);
@@ -55,8 +59,6 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ user, login, logout, loading, notify }}>
     {children}
-
-    {/* 3. Render the Global ToastContainer here */}
     <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999, position: 'fixed' }}>
       <Toast
         onClose={() => setToast({ ...toast, show: false })}

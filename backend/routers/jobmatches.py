@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 from pymongo.errors import DuplicateKeyError
 from pymongo import ReturnDocument
+from backend.services.userstats_service import (
+    recalculate_top_missing_skill_for_user
+)
 
 from backend.db.mongo import get_db
 from backend.utils.validation import validate_object_id
@@ -35,7 +38,13 @@ async def create_job_match(payload: JobMatchCreate):
     try:
         result = await db.job_matches.insert_one(doc)
         doc["_id"] = result.inserted_id
+
+        # Automatically calculate top missing skill for user
+        if doc.get("missing_skills"):
+            await recalculate_top_missing_skill_for_user(db, user_oid)
+
         return jobmatch_helper(doc)
+
     except DuplicateKeyError:
         raise HTTPException(
             status_code=409,
@@ -80,9 +89,20 @@ async def update_job_match(match_id: str, updates: JobMatchUpdate):
 @router.delete("/{match_id}", status_code=204)
 async def delete_job_match(match_id: str):
     db = get_db()
+
     match_oid = validate_object_id(match_id, "match ID")
+    doc = await db.job_matches.find_one({"_id": match_oid})
 
-    result = await db.job_matches.delete_one({"_id": match_oid})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Match not found")
 
-    if result.deleted_count == 0:
-        raise HTTPException(404, "Match not found")
+    user_oid = doc["user_id"]
+
+    # Delete the job match
+    await db.job_matches.delete_one({"_id": match_oid})
+
+    # Automatically recalculate top missing skill
+    await recalculate_top_missing_skill_for_user(db, user_oid)
+
+    # 204 means no response body
+    return

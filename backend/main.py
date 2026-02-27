@@ -24,6 +24,7 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     await mongo.connect(os.getenv("PROD_DB"))
     await ensure_indexes()
+    await ensure_indexes()
     yield
     await mongo.close()
 

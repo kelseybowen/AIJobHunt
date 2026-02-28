@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Toast, ToastContainer, Spinner, Alert } from 'react-bootstrap';
+import { Container, Spinner, Alert } from 'react-bootstrap';
 import api from '../services/api';
 import Results from './Results';
 import PreferencesSummary from '../components/PreferencesSummary';
@@ -17,12 +17,17 @@ const Search = () => {
 
   useEffect(() => {
     if (user) {
-      const hasCriteria = user.preferences?.skills?.length > 0 || user.preferences?.target_roles?.length > 0;
-      if (hasCriteria && results.length === 0) {
-        handleSearch(user.preferences);
-      }
-      setLoading(false);
+      const hasSkills = user.preferences?.skills?.length > 0;
+      const hasRoles = user.preferences?.target_roles?.length > 0;
+      const hasCriteria = hasSkills || hasRoles;
+      if (!hasCriteria) {
+      setIsEditing(true);
+    } else if (results.length === 0) {
+      handleSearch(user.preferences);
     }
+    
+    setLoading(false);
+  }
   }, [user]);
 
   const handlePreferenceUpdate = async (formData) => {
@@ -43,6 +48,8 @@ const Search = () => {
     setSearchError("");
     try {
       const response = await api.post('/jobs/search', criteria);
+      console.log("Searching for: ", criteria)
+      console.log(response)
       setResults(response.data);
     } catch (err) {
       console.error("Search API Error:", err);
@@ -66,8 +73,6 @@ const Search = () => {
     <Container className='mx-auto m-5'>
       <h2 className="fw-bold mb-4">Job Search</h2>
 
-      {searchError && <Alert variant="danger">{searchError}</Alert>}
-
       {isEditing ? (
         <PreferencesForm
           initialData={user?.preferences}
@@ -85,7 +90,6 @@ const Search = () => {
 
       {/* Search  Results*/}
       <div className="results-section">
-        <h3 className="mb-4">AI-Matched Results</h3>
 
         {searching ? (
           <div className="text-center py-5">

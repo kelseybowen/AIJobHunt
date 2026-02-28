@@ -159,49 +159,53 @@ async def search_jobs(
     criteria: UserPreferencesUpdate, 
     db = Depends(get_db)
 ):
-    query = {}
-    if criteria.skills:
-        # "$in" checks if ANY element in the job's skills_required list 
-        # is present in the user's skills list
-        query["skills_required"] = {"$in": criteria.skills}
+    or_filters = []
 
     # Match Target Roles (Regex search on job title)
     if criteria.target_roles:
-        query["$or"] = [
+        or_filters.extend([
             {"title": {"$regex": role, "$options": "i"}} 
             for role in criteria.target_roles
-        ]
-
-    # Match Salary >= user's min request
-    if criteria.salary_min is not None:
-        query["salary_range.min"] = {"$gte": criteria.salary_min}
+        ])
+    
+    # Match Skills
+    if criteria.skills:
+        or_filters.append({"skills_required": {"$in": criteria.skills}})
 
     # Match Location
     if criteria.desired_locations:
-        location_queries = [
+        or_filters.extend([
             {"location": {"$regex": loc, "$options": "i"}} 
             for loc in criteria.desired_locations
-        ]
-        if "$or" in query:
-            query = {"$and": [
-                {"$or": query.pop("$or")},
-                {"$or": location_queries}
-            ]}
-        else:
-            query["$or"] = location_queries
+        ])
+    
+    # Construct query
+    query = {}
+    if or_filters:
+        query["$or"] = or_filters
+    
+    # Match Salary
+    if criteria.salary_min is not None and criteria.salary_min > 0:
+        # Use $and to ensure they match (Roles/Skills/Loc) AND (Salary)
+        # Also allow jobs where salary_range is missing/null so "Salary Negotiable" roles are not missed
+        query = {
+            "$and": [
+                query if query else {},
+                {
+                    "$or": [
+                        {"salary_range.min": {"$gte": criteria.salary_min}},
+                        {"salary_range": None},
+                        {"salary_range.min": None}
+                    ]
+                }
+            ]
+        }
 
     try:
         cursor = db.jobs.find(query).limit(50)
         jobs = await cursor.to_list(length=50)
-        
-        # Format for JobInDB
-        formatted_jobs = []
-        for job in jobs:
-            job["id"] = str(job["_id"]) # Maps _id to id for the response model
-            formatted_jobs.append(job)
-            
-        return formatted_jobs
+        return [job_helper(job) for job in jobs]
 
     except Exception as e:
         print(f"Search error: {e}")
-        raise HTTPException(status_code=500, detail="Database search failed")
+        return []

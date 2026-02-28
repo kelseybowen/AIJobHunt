@@ -3,7 +3,7 @@ import { Card } from 'react-bootstrap';
 
 const DashboardCard = ({ title, icon, children, footer, className = "" }) => {
   return (
-    <Card className={`h-100 shadow-sm border rounded-3 bg-light ${className}`}>
+    <Card className={`shadow-sm border rounded-3 bg-light ${className}`}>
       <Card.Body className="p-4">
         {title && (
           <div className="d-flex align-items-center mb-3">

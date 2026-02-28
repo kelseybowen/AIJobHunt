@@ -2,7 +2,7 @@ import pandas as pd
 import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sentence_transformers import SentenceTransformer
-from logic import clean_text
+from logic import clean_text, clean_text_for_embeddings
 from mongo_ingestion_utils import get_sync_jobs_collection
 
 def fetch_jobs_data() -> pd.DataFrame:
@@ -34,7 +34,7 @@ def build_model():
     print(f"Loaded {len(df)} jobs. Training models...")
 
     # Clean Data
-    df['processed_text'] = df['Description'].apply(clean_text)
+    df['processed_text'] = df['description'].apply(clean_text)
 
     # Perform TD-IDF Vectorizer
     tfidf = TfidfVectorizer(
@@ -50,7 +50,7 @@ def build_model():
 
     # Save the model
     print("Saving to model.pkl")
-    with open("model.pkl", "wb") as f:
+    with open("models/model.pkl", "wb") as f:
         pickle.dump((tfidf, tfidf_matrix, df), f)
 
     print("Done!")
@@ -66,7 +66,7 @@ def build_semantic_model():
     print(f"Loaded {len(df)} jobs. Training models...")
 
     # Clean Data
-    df['processed_text'] = df['Description'].apply(clean_text)
+    df['processed_text'] = df['description'].apply(clean_text_for_embeddings)
 
     # Load the sentence-transformer lightweight Hugging Face Model
     print("Loading Sentence Transformer...")
@@ -80,7 +80,7 @@ def build_semantic_model():
 
     # Save the artifacts
     print("Saving semantic_model.pkl...")
-    with open("semantic_model.pkl", "wb") as fd:
+    with open("models/semantic_model.pkl", "wb") as fd:
         pickle.dump((job_embeddings, df), fd)
 
     print("Semantic Model built successfully!")

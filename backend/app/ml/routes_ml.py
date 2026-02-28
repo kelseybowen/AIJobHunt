@@ -16,6 +16,7 @@ try:
 except FileNotFoundError as e:
     print(f"Warning: ML models not found. Run train.py first. Details: {e}")
 
+
 # --- Pydantic Models
 class UserPreferences(BaseModel):
     desired_locations: List[str] = []
@@ -25,13 +26,16 @@ class UserPreferences(BaseModel):
     salary_min: Optional[int] = None
     salary_max: Optional[int] = None
 
+
 class RecommendationRequest(BaseModel):
-    user_id: str = Field(..., description="The ID of the user requesting matches")
+    user_id: str = Field(...,
+                         description="The ID of the user requesting matches")
     preferences: UserPreferences
+
 
 # --- API Endpoints ---
 
-@router.post("/recommend")
+@router.post("/job-matches")
 async def get_recommendations(request: RecommendationRequest):
     """
     Generates job recommendations based on user preferences.
@@ -44,9 +48,11 @@ async def get_recommendations(request: RecommendationRequest):
     model_type = "semantic"
     try:
         if model_type == "tfidf":
-            matches = tfidf_matcher.recommend(request.preferences.model_dump(), top_n=10)
+            matches = tfidf_matcher.recommend(request.preferences.model_dump(),
+                                              top_n=10)
         else:
-            matches = semantic_matcher.recommend(request.preferences.model_dump(), top_n=10)
+            matches = semantic_matcher.recommend(
+                request.preferences.model_dump(), top_n=10)
 
         collection = get_async_matches_collection()
 
@@ -71,7 +77,9 @@ async def get_recommendations(request: RecommendationRequest):
 
     except Exception as e:
         print(f"ML Recommendation Error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to generate or save recommendations.")
+        raise HTTPException(status_code=500,
+                            detail="Failed to generate or save recommendations.")
+
 
 @router.post("/train")
 async def trigger_training():
@@ -81,7 +89,8 @@ async def trigger_training():
 
     try:
         build_semantic_model()
-        return {"status": "success", "message": "ML models rebuilt and cached."}
+        return {"status": "success",
+                "message": "ML models rebuilt and cached."}
     except Exception as e:
         print(f"Training Error: {e}")
         raise HTTPException(status_code=500,

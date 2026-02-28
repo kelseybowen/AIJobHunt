@@ -19,7 +19,7 @@ def _ensure_env_loaded():
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
     candidates = [
-        os.path.join(this_dir, "..", "..", ".env"),
+        os.path.join(this_dir, "..", "..", "..", ".env"),
         os.path.join(os.getcwd(), ".env"),
         os.path.join(os.getcwd(), "backend", ".env"),
     ]
@@ -46,7 +46,7 @@ def get_sync_jobs_collection():
     if _sync_client is None:
         _sync_client = MongoClient(uri, serverSelectionTimeoutMS=5000)
 
-    return _sync_client[db_name]["jobs"]
+    return _sync_client[db_name]["cleaned_ingestion_data"]
 
 def get_async_matches_collection():
     """

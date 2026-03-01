@@ -133,7 +133,9 @@ class JobMatcher:
         # Load the model only when the class is initialized
         self.tfidf: TfidfVectorizer
         self.df: pandas.DataFrame
-        model_path = os.path.join(os.path.dirname("./"), "models/model.pkl")
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(current_dir, "models", "model.pkl")
 
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model artifact not found at {model_path}. Run train.py first.")
@@ -257,8 +259,8 @@ class SemanticJobMatcher:
     def __init__(self):
         self.encoder = SentenceTransformer('all-MiniLM-L6-v2')
 
-        base_path = os.path.join(os.path.dirname("./"),
-                                 "models/semantic_model.pkl")
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        base_path = os.path.join(current_dir, "models", "semantic_model.pkl")
 
         if not os.path.exists(base_path):
             raise FileNotFoundError(f"Model artifact not found at "

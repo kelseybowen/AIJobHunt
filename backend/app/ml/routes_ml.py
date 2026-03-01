@@ -2,20 +2,26 @@ from fastapi import APIRouter, HTTPException, Body
 from bson import ObjectId
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from logic import JobMatcher, SemanticJobMatcher
-from mongo_ingestion_utils import get_async_matches_collection
+from .logic import JobMatcher, SemanticJobMatcher
+from .mongo_ingestion_utils import get_async_matches_collection
 from datetime import datetime, timezone
-from train import build_semantic_model, build_model
+from .train import build_semantic_model, build_model
 
 router = APIRouter()
 
 # LOAD CACHED MODELS
+tfidf_matcher = None
+semantic_matcher = None
+
 try:
+    print("🔄 Loading ML Models...")
     tfidf_matcher = JobMatcher()
     semantic_matcher = SemanticJobMatcher()
+    print("✅ ML Models loaded successfully.")
 except FileNotFoundError as e:
-    print(f"Warning: ML models not found. Run train.py first. Details: {e}")
-
+    print(f"⚠️ Warning: ML model files not found. Did you run train.py? Error: {e}")
+except Exception as e:
+    print(f"❌ Unexpected error loading models: {e}")
 
 # --- Pydantic Models
 class UserPreferences(BaseModel):
@@ -28,7 +34,7 @@ class UserPreferences(BaseModel):
 
 
 class RecommendationRequest(BaseModel):
-    user_id: str = Field(...,
+    id: str = Field(..., alias="_id",
                          description="The ID of the user requesting matches")
     preferences: UserPreferences
 
@@ -59,8 +65,8 @@ async def get_recommendations(request: RecommendationRequest):
         for match in matches:
             await collection.update_one(
                 {
-                    "user_id": ObjectId(request.user_id),
-                    "job_id": ObjectId(match["job_id"])
+                    "user_id": ObjectId(request.id),
+                    "job_id": ObjectId(match.get("job_id"))
                 },
                 {
                     "$set": {

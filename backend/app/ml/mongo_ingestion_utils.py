@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 #Singletons to prevent connection leaks
 _sync_client: Optional[MongoClient] = None
-_async_client: None
+_async_client: Optional[motor.motor_asyncio.AsyncIOMotorClient] = None
 
 def _ensure_env_loaded():
     """

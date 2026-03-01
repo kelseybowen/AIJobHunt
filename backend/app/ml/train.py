@@ -2,8 +2,8 @@ import pandas as pd
 import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sentence_transformers import SentenceTransformer
-from logic import clean_text, clean_text_for_embeddings
-from mongo_ingestion_utils import get_sync_jobs_collection
+from .logic import clean_text, clean_text_for_embeddings
+from .mongo_ingestion_utils import get_sync_jobs_collection
 
 def fetch_jobs_data() -> pd.DataFrame:
     """

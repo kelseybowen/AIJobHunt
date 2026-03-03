@@ -27,5 +27,6 @@ async def recalculate_top_missing_skill_for_user(db, user_oid):
                 "top_missing_skill": top_skill,
                 "last_calculated": datetime.now(timezone.utc),
             }
-        }
+        },
+        upsert=True
     )

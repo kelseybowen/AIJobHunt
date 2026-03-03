@@ -4,6 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sentence_transformers import SentenceTransformer
 from .logic import clean_text, clean_text_for_embeddings
 from .mongo_ingestion_utils import get_sync_jobs_collection
+import os
 
 def fetch_jobs_data() -> pd.DataFrame:
     """
@@ -80,11 +81,14 @@ def build_semantic_model():
 
     # Save the artifacts
     print("Saving semantic_model.pkl...")
-    with open("models/semantic_model.pkl", "wb") as fd:
+
+    current_directory = os.getcwd()
+    print(current_directory)
+
+    with open("backend/app/ml/models/semantic_model.pkl", "wb") as fd:
         pickle.dump((job_embeddings, df), fd)
 
     print("Semantic Model built successfully!")
 
-if __name__ == "__main__":
-    #build_model()
-    build_semantic_model()
+
+build_semantic_model()

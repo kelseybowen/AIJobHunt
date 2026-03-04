@@ -7,8 +7,8 @@ from pydantic import BaseModel, Field, model_validator, ConfigDict, BeforeValida
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
 class SalaryRange(BaseModel):
-    min: Optional[int] = Field(None, ge=0)
-    max: Optional[int] = Field(None, ge=0)
+    min: Optional[float] = Field(None, ge=0)
+    max: Optional[float] = Field(None, ge=0)
     currency: Optional[str] = "USD"
 
     @model_validator(mode="after")

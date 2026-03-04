@@ -11,6 +11,8 @@ from backend.models.userjobinteraction import (
     UserJobInteractionInDB,
     userjobinteraction_helper,
 )
+from bson import ObjectId
+from bson.errors import InvalidId
 
 router = APIRouter()
 
@@ -96,14 +98,26 @@ async def update_interaction(
     return userjobinteraction_helper(updated)
 
 
-@router.delete("/{interaction_id}", status_code=204)
-async def delete_interaction(interaction_id: str):
-    interaction_oid = validate_object_id(interaction_id, "interaction ID")
+@router.delete("/user/{user_id}/job/{job_id}")
+async def delete_interaction(user_id: str, job_id: str):
     db = get_db()
-
-    result = await db.user_job_interactions.delete_one(
-        {"_id": interaction_oid}
-    )
-
-    if result.deleted_count == 0:
-        raise HTTPException(404, "Interaction not found")
+    try:
+        result = await db.interactions.delete_one({
+            "user_id": ObjectId(user_id),
+            "job_id": ObjectId(job_id),
+            "interaction_type": "saved"
+        })
+        
+        if result.deleted_count == 0:
+            # Check if it was saved as a string instead of ObjectId
+            result = await db.interactions.delete_one({
+                "user_id": user_id, 
+                "job_id": job_id,
+                "interaction_type": "saved"
+            })
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Interaction not found")
+        
+        return {"message": "Job unsaved successfully"}
+    except InvalidId:
+        raise HTTPException(status_code=400, detail=f"Invalid ID format provided: {user_id} or {job_id}")

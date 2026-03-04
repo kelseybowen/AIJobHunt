@@ -31,7 +31,6 @@ google-api-core==2.24.2
 google-auth==2.38.0
 google-cloud-core==2.4.3
 google-cloud-datastore==2.20.2
-google_search_results==2.4.2
 googleapis-common-protos==1.69.2
 grpcio==1.71.0
 grpcio-status==1.71.0
@@ -67,7 +66,7 @@ pluggy==1.6.0
 preshed==3.0.12
 proto-plus==1.26.1
 protobuf==5.29.4
-pyasn1>=0.6.1
+pyasn1==0.6.2
 pyasn1_modules==0.4.2
 pycodestyle==2.14.0
 pycparser==3.0
@@ -94,7 +93,6 @@ scikit-learn==1.8.0
 scipy==1.17.0
 sentence-transformers==5.2.3
 sentinels==1.1.1
-setuptools==82.0.0
 shellingham==1.5.4
 six==1.17.0
 smart_open==7.5.0

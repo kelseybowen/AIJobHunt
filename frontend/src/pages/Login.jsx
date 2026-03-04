@@ -50,7 +50,6 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      console.error("Bypass Secret Header check:", err.config.headers['aijobhunt-api-secret']);
       setAuthError("Bypass failed. Check your .env and backend.");
     }
   };

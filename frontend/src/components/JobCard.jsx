@@ -8,8 +8,7 @@ const JobCard = ({ job, initialSaved, onUnsave }) => {
   const company = job.company || "Company Name";
   const location = job.location || job.job_location || "Remote / Not Listed";
   const salary_range = job.salary_range || {};
-  const externalUrl = job.url || job.job_url || "#";
-  const { user } = useAuth();
+  const externalUrl = job.url || job.job_url || job.source_url || job.link || "#";  const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(initialSaved);
   const [isLoading, setIsLoading] = useState(false);
   const [matchData, setMatchData] = useState(null);

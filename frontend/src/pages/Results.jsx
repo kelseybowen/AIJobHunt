@@ -1,25 +1,23 @@
+import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Container, Alert, Button } from 'react-bootstrap';
-import { useState, useEffect } from 'react';
+import { Container, Alert, Button, Spinner } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import JobCard from '../components/JobCard';
-import api from '../services/api';
 import api from '../services/api';
 
 const Results = ({ results }) => {
   const location = useLocation();
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [savedJobIds, setSavedJobIds] = useState(new Set());
   const filters = location.state?.filters;
 
   useEffect(() => {
     const fetchSavedJobs = async () => {
-      if (!user?.id) return;
+      const userId = user?.id || user?._id; 
+      if (!userId) return;
+
       try {
-        const response = await api.get(`/interactions/user/${user.id}`);
-        if (response.status === 200) {
-          const interactions = response.data;
-        const response = await api.get(`/interactions/user/${user.id}`);
+        const response = await api.get(`/interactions/user/${userId}`);
         if (response.status === 200) {
           const interactions = response.data;
           const savedIds = new Set(
@@ -37,7 +35,7 @@ const Results = ({ results }) => {
     fetchSavedJobs();
   }, [user]);
 
-  if (loading) {
+  if (authLoading) {
     return (
       <Container className="text-center mt-5">
         <Spinner animation="border" variant="primary" />
@@ -47,16 +45,18 @@ const Results = ({ results }) => {
   }
 
   if (!results || results.length === 0) {
-    return <div className="text-center">
-      <p className="text-center text-muted">No matches found. Try adjusting your skills.</p>
-      <Button as={Link} to="/dashboard" variant="outline-secondary">
-        Edit Preferences
-      </Button>
-    </div>
+    return (
+      <div className="text-center my-5">
+        <p className="text-muted">No matches found in your preferred locations. Try adjusting your preferences.</p>
+        <Button as={Link} to="/dashboard" variant="outline-primary">
+          Edit Preferences
+        </Button>
+      </div>
+    );
   }
 
   const formatCurrency = (value) => {
-    return value ? value.toLocaleString() : '0';
+    return value ? Number(value).toLocaleString() : '0';
   };
 
   return (
@@ -64,35 +64,30 @@ const Results = ({ results }) => {
       <h2 className="fw-bold my-3">Matching Jobs ({results.length})</h2>
 
       {filters && (
-        <Alert variant="info" className="text-start d-inline-block shadow-sm">
-          <strong>Searching for:</strong> {filters.target_roles.join(', ')} <br />
-          <strong>Skills:</strong> {filters.skills.join(', ')} <br />
-          <strong>Location:</strong> {filters.desired_locations.join(', ') || 'Anywhere'} <br />
-          <strong>Salary Range:</strong> ${formatCurrency(filters.salary_min)} — ${formatCurrency(filters.salary_max)}
+        <Alert variant="info" className="text-start d-inline-block shadow-sm mb-4">
+          <div className="small">
+            <strong>Target Roles:</strong> {filters.target_roles?.join(', ') || 'Any'} <br />
+            <strong>Key Skills:</strong> {filters.skills?.join(', ') || 'Any'} <br />
+            <strong>Locations:</strong> {filters.desired_locations?.length > 0 ? filters.desired_locations.join(', ') : 'Anywhere'} <br />
+            <strong>Min Salary:</strong> ${formatCurrency(filters.salary_min)}
+          </div>
         </Alert>
       )}
 
-      <div className="job-list">
-        {results.map((job, index) => {
-          const currentId = job.job_id || job._id || job.id;
-
-          return (
-            <JobCard
-              key={currentId}
-              job={{ ...job, id: currentId }}
-              initialSaved={savedJobIds.has(currentId)}
-              onUnsave={() => {
-                setSavedJobIds(prev => {
-                  const newSet = new Set(prev);
-                  newSet.delete(currentId);
-                  return newSet;
-                });
-              }}
-            />
-          );
-        })}
+      <div className="job-list d-flex flex-column align-items-center gap-3">
+        {results.map((job) => (
+          <JobCard
+            key={job.job_id || job._id || job.external_id}
+            job={job}
+            initialSaved={savedJobIds.has(job.job_id || job._id || job.id)}
+            onUnsave={() => {
+              const newSet = new Set(savedJobIds);
+              newSet.delete(job.job_id || job._id || job.id);
+              setSavedJobIds(newSet);
+            }}
+          />
+        ))}
       </div>
-
     </Container>
   );
 };

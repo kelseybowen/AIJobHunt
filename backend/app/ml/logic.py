@@ -141,10 +141,7 @@ class JobMatcher:
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model artifact not found at {model_path}. Run train.py first.")
 
-        # with open(model_path, "rb") as fd:
-        #     self.tfidf, self.tfidf_matrix, self.df = pickle.load(fd)
         with open(model_path, "rb") as fd:
-            # If your train.py saved it as a list:
             loaded_data = pickle.load(fd)
             self.tfidf = loaded_data[0]
             self.tfidf_matrix = loaded_data[1]
@@ -272,9 +269,6 @@ class SemanticJobMatcher:
         if not os.path.exists(base_path):
             raise FileNotFoundError(f"Model artifact not found at "
                                     f"{base_path}. Run train.py first.")
-
-        # with open(base_path, "rb") as fd:
-        #     self.job_embeddings, self.df = pickle.load(fd)
 
         with open(base_path, "rb") as fd:
             data = pickle.load(fd)            

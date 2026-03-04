@@ -90,15 +90,6 @@ async def get_recommendations(request: RecommendationRequest):
 
     Returns:
     """
-
-    # model_type = "semantic"
-    # try:
-    #     if model_type == "tfidf":
-    #         matches = tfidf_matcher.recommend(request.preferences.model_dump(),
-    #                                           top_n=10)
-    #     else:
-    #         matches = semantic_matcher.recommend(
-    #             request.preferences.model_dump(), top_n=10)
     global semantic_matcher, tfidf_matcher
     
     # 1. Convert to ObjectId immediately to avoid format errors later

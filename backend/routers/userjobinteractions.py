@@ -102,22 +102,22 @@ async def update_interaction(
 async def delete_interaction(user_id: str, job_id: str):
     db = get_db()
     try:
-        result = await db.interactions.delete_one({
-            "user_id": ObjectId(user_id),
-            "job_id": ObjectId(job_id),
+        u_oid = ObjectId(user_id.strip())
+        j_oid = ObjectId(job_id.strip())
+        result = await db.user_job_interactions.delete_one({
+            "user_id": u_oid,
+            "job_id": j_oid,
             "interaction_type": "saved"
         })
-        
         if result.deleted_count == 0:
-            # Check if it was saved as a string instead of ObjectId
-            result = await db.interactions.delete_one({
-                "user_id": user_id, 
+            result = await db.user_job_interactions.delete_one({
+                "user_id": user_id,
                 "job_id": job_id,
                 "interaction_type": "saved"
             })
         if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Interaction not found")
-        
-        return {"message": "Job unsaved successfully"}
-    except InvalidId:
-        raise HTTPException(status_code=400, detail=f"Invalid ID format provided: {user_id} or {job_id}")
+            raise HTTPException(status_code=404, detail="Saved interaction not found in database.")
+        return {"status": "success", "message": "Interaction deleted."}
+    except Exception as e:
+        print(f"Delete Error: {str(e)}")
+        raise HTTPException(status_code=400, detail="Invalid ID format or database error.")

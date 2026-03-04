@@ -71,21 +71,27 @@ const Results = ({ results }) => {
 
       <div className="job-list">
         {results.map((job, index) => {
+          // ML results usually put the MongoDB _id in 'job_id'
+          // If 'job_id' is missing, then it falls back to the database fields
           const currentId = job.job_id || job._id || job.id;
+
           return (
             <JobCard
-            key={currentId}
-            job={job}
-            initialSaved={savedJobIds.has(currentId)}
-            onUnsave={() => {
-              setSavedJobIds(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(currentId);
-                return newSet;
-              })
-            }}
+              key={currentId}
+              // Pass a "clean" job object where the ID is definitely 'id'
+              job={{ ...job, id: currentId }}
+              initialSaved={savedJobIds.has(currentId)}
+              onUnsave={() => {
+                setSavedJobIds(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(currentId);
+                  return newSet;
+                });
+              }}
             />
-          )})}
+          );
+        })}
+        2. Verify your /ml/job-matches
       </div>
 
     </Container>

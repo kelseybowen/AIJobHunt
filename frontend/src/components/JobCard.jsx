@@ -64,21 +64,25 @@ const JobCard = ({ job, initialSaved, onUnsave }) => {
     }
   };
 
-  const handleUnsaveJob = async () => {
-    if (!user?.id || isLoading) return;
-    setIsLoading(true);
-    try {
-      const effectiveJobId = job.job_id || job._id || job.id;
-      console.log("Attempting unsave for Job ID:", effectiveJobId);
-      await api.delete(`/interactions/user/${user.id}/job/${effectiveJobId}`);
-      setIsSaved(false);
-      if (onUnsave) onUnsave();
-    } catch (error) {
-      console.error("Unsave failed:", error.response?.data || error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+const handleUnsaveJob = async () => {
+  if (!user?.id || isLoading) return;
+  
+  const jobId = (job.job_id || job._id || job.id)?.toString().trim();
+  const userId = user.id.toString().trim();
+
+  setIsLoading(true);
+  try {
+    // encodeURIComponent handles any weird characters or spaces
+    await api.delete(`/interactions/user/${encodeURIComponent(userId)}/job/${encodeURIComponent(jobId)}`);
+    
+    setIsSaved(false);
+    if (onUnsave) onUnsave();
+  } catch (error) {
+    console.error("Unsave failed:", error.response?.data || error.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const getScoreColor = (score) => {
     const s = score * 100;

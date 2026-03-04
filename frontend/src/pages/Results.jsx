@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import JobCard from '../components/JobCard';
 import api from '../services/api';
+import api from '../services/api';
 
 const Results = ({ results }) => {
   const location = useLocation();
@@ -15,6 +16,9 @@ const Results = ({ results }) => {
     const fetchSavedJobs = async () => {
       if (!user?.id) return;
       try {
+        const response = await api.get(`/interactions/user/${user.id}`);
+        if (response.status === 200) {
+          const interactions = response.data;
         const response = await api.get(`/interactions/user/${user.id}`);
         if (response.status === 200) {
           const interactions = response.data;

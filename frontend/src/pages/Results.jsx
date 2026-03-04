@@ -87,7 +87,6 @@ const Results = ({ results }) => {
             />
           );
         })}
-        2. Verify your /ml/job-matches
       </div>
 
     </Container>

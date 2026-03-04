@@ -11,7 +11,6 @@ const Results = ({ results }) => {
   const [savedJobIds, setSavedJobIds] = useState(new Set());
   const filters = location.state?.filters;
 
-  // Get saved jobs to display saved status on JobCard
   useEffect(() => {
     const fetchSavedJobs = async () => {
       if (!user?.id) return;
@@ -71,14 +70,11 @@ const Results = ({ results }) => {
 
       <div className="job-list">
         {results.map((job, index) => {
-          // ML results usually put the MongoDB _id in 'job_id'
-          // If 'job_id' is missing, then it falls back to the database fields
           const currentId = job.job_id || job._id || job.id;
 
           return (
             <JobCard
               key={currentId}
-              // Pass a "clean" job object where the ID is definitely 'id'
               job={{ ...job, id: currentId }}
               initialSaved={savedJobIds.has(currentId)}
               onUnsave={() => {

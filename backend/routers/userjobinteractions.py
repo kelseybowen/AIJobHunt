@@ -12,7 +12,6 @@ from backend.models.userjobinteraction import (
     userjobinteraction_helper,
 )
 from bson import ObjectId
-from bson.errors import InvalidId
 
 router = APIRouter()
 

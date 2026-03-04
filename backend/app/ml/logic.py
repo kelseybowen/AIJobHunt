@@ -352,6 +352,24 @@ class SemanticJobMatcher:
         if user_min is not None:
             return job_max >= user_min
         return job_min <= user_max
+    
+    def location_matches(self, job_row, preferred_locations):
+        """
+        Returns True if the job location matches any of the user's preferred locations.
+        """
+        if not preferred_locations:
+            return True
+            
+        job_location = str(job_row.get("location", "")).lower()
+        
+        for loc in preferred_locations:
+            clean_loc = loc.split(',')[0].strip().lower() # Get city name from "City, State"
+            if clean_loc in job_location:
+                return True
+            if "remote" in clean_loc and "remote" in job_location:
+                return True
+                
+        return False
 
 
     def recommend(self, user_preferences: dict, top_n=5):
@@ -376,13 +394,23 @@ class SemanticJobMatcher:
         elif not isinstance(target_roles, list):
             target_roles = []
 
+        preferred_locations = user_preferences.get("desired_locations", [])
         user_min = user_preferences.get("salary_min")
         user_max = user_preferences.get("salary_max")
 
         eligible_indices = [
             idx for idx, job_row in self.df.iterrows()
-            if self.salary_matches(job_row, user_min, user_max)
+            if self.salary_matches(job_row, user_min, user_max) 
+            and self.location_matches(job_row, preferred_locations)
         ]
+        
+        if not eligible_indices and preferred_locations:
+            eligible_indices = [
+                idx for idx, job_row in self.df.iterrows()
+                if self.salary_matches(job_row, user_min, user_max)
+                and "remote" in str(job_row.get("location", "")).lower()
+            ]
+        
         if not eligible_indices:
             return []
 

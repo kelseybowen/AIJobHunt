@@ -41,7 +41,7 @@ app.add_middleware(
     ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["Content-Type", "Authorization", "aijobhunt-api-secret"],
+    allow_headers=["*"],
 )
 
 @app.middleware("http")
@@ -74,6 +74,4 @@ app.include_router(
 )
 app.include_router(ingestion.router, prefix="/ingestion", tags=["Ingestion"])
 app.include_router(routes_ml.router, prefix="/ml", tags=["Machine Learning"])
-# /users route must be last
 app.include_router(users.router, prefix="/users", tags=["Users"])
-# do not add routes after this

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, model_validator, ConfigDict, BeforeValida
 # This helper converts ObjectId to string for Pydantic validation
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
+
 class SalaryRange(BaseModel):
     min: Optional[float] = Field(None, ge=0)
     max: Optional[float] = Field(None, ge=0)

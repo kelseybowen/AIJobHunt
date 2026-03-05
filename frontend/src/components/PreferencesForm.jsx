@@ -105,7 +105,7 @@ const PreferencesForm = ({ onSearch, initialData, onCancel }) => {
       desired_locations: [],
       skills: [],
       salary_min: 0,
-      salary_max: 200000
+      salary_max: 0
     }
   });
 

@@ -52,7 +52,6 @@ const handleSearch = async (criteria) => {
       preferences: criteria
     };
     const response = await api.post('/ml/job-matches', payload);
-    console.log("Matches found:", response.data.matches?.length);
     
     setResults(response.data.matches || []); 
   } catch (err) {

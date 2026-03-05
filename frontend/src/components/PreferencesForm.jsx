@@ -70,7 +70,6 @@ const LocationAutocomplete = ({ value, onChange }) => {
           disabled={!ready}
           className="form-control"
           placeholder="Type a city to add (e.g. San Francisco, CA)"
-          onBlur={() => setValue("")}
         />
         <ComboboxPopover style={{ zIndex: 9999 }}>
           <ComboboxList className="border shadow-sm rounded">

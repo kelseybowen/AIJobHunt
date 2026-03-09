@@ -54,10 +54,16 @@ const DataPullControl = () => {
           setResults([data]);
           setStatus(null);
         }
+
+        // -- ML TRAINING --
+        setStatus("Training ML Models...");
+        await api.post('/ml/train');
+
+        setStatus(null); // Clear status on complete success
       } catch (err) {
         const message = err.response?.data?.detail || err.message;
-        const failedSource = status ? status.replace('Pulling ', '').replace('…', '') : source;
-        setError(`${failedSource}: ${message}`);
+        const currentPhase = status?.includes('Training') ? 'ML Training' : 'Ingestion';
+        setError(`${currentPhase} failed: ${message}`);
         setStatus(null);
       } finally {
         setLoading(false);

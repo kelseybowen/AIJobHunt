@@ -2,8 +2,7 @@
 
 ## Overview
 
-This directory contains integration scripts for multiple job posting APIs used to ingest job data for the Job Hunting AI Web Tool. All APIs are configured to search for U.S.-based jobs and/or remote, with a focus on computer science and software engineering positions. SUBJECT TO CHANGE***
----
+This directory contains integration scripts for multiple job posting APIs used to ingest job data for the Job Hunting AI Web Tool. All APIs are configured to search for U.S.-based jobs and/or remote, and a generated list of top jobs of the last year (2025) within the US.
 
 ## APIs Used
 
@@ -84,46 +83,17 @@ This directory contains integration scripts for multiple job posting APIs used t
 
 ## Jobs We're Looking For
 
+### Job titles (single source of truth: top_jobs.py)
+
+The list of job titles used for ingestion is maintained in [top_jobs.py](top_jobs.py) as **`TOP_JOBS`**. 
+
+**Consumers:** `adzuna_top_jobs_to_mongo`, `adzuna_fetch_top_jobs` / `test_adzuna_api_top_jobs`, `jobicy_fetch_top_jobs`, `jobicy_to_mongo`, `serpapi_fetch_top_jobs`, `serpapi_to_mongo`.
+
+**Summary:** Dozens of titles including Software Engineer, Data Scientist, Registered Nurse, Truck Driver, Cybersecurity Analyst, AI Engineer, Teacher, and more. See [top_jobs.py](top_jobs.py) for the full list.
+
 ### Primary Search Criteria
-- **Job Titles**: TBD
-- **Location**: 
-  - United States
-  - US-based or US timezone positions
+- **Location**: United States, US-based or US timezone positions
 
-### Top 25 Computer Science Job Titles (2026)
-The system also searches for the following high-demand computer science positions.
-
-The top 25 job titles include:
-- AI Engineer
-- Machine Learning Engineer
-- Cybersecurity Analyst
-- Software Engineer
-- Data Scientist
-- Cloud Architect
-- Data Engineer
-- DevOps Engineer
-- AI Consultant
-- Technical Product Manager
-- Full-Stack Developer
-- AI/ML Researcher
-- Data Architect
-- Security Engineer
-- Network Engineer
-- Blockchain Developer
-- Systems Analyst
-- UX/UI Designer
-- Datacenter Technician
-- Quantitative Researcher
-- Mobile App Developer
-- Ethical Hacker
-- Database Administrator
-- SRE (Site Reliability Engineer)
-- Solutions Architect
-
-### Salary Range
-- **Minimum**: $50,000
-- **Maximum**: $150,000
-- **Note**: Some APIs may not include salary information for all positions
 
 ---
 
@@ -652,19 +622,25 @@ Headers:
 
 ## Data Normalization
 
-All APIs return data in different formats. The integration scripts normalize all job postings to a unified schema with the following fields:
+All APIs return data in different formats. The integration scripts normalize all job postings to a **canonical job schema**. The single source of truth is [job_schema.py](job_schema.py).
 
-### Standardized Fields
-- **Company**: Company name
-- **Position**: Job title
-- **Location**: Job location (or "Remote")
-- **Tags**: Semicolon-separated tags
-- **Description**: Cleaned job description (HTML removed, whitespace normalized)
-- **URL**: Application URL or job posting URL
-- **Salary_Min**: Minimum salary (if available)
-- **Salary_Max**: Maximum salary (if available)
-- **Date**: Publication date
-- **ID**: Unique job identifier from source API
+### Canonical job schema (job_schema.py)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| external_id | string | Unique id; format `{source_slug}_{digits}` (e.g. `adzuna_12345`) |
+| title | string | Job title |
+| company | string | Company name |
+| description | string | Cleaned job description (HTML removed, whitespace normalized) |
+| location | string | Job location (or "Remote") |
+| remote_type | string | One of `remote` \| `hybrid` \| `in-person` \| `not provided` |
+| skills_required | list[str] | Skills/tags; API "tags" are mapped here |
+| posted_date | datetime (UTC) or None | Publication date |
+| source_url | string | Application or job posting URL |
+| source_platform | string | Source identifier (e.g. "Adzuna", "SerpAPI") |
+| salary_range | object | `{ min: number \| None, max: number \| None, currency: str }` |
+| source | string | Same as source_platform |
+| ingested_at | datetime | Set by ingestion |
 
 ### USAJobs Additional Fields
 - **Department**: Department name
@@ -683,6 +659,8 @@ All APIs return data in different formats. The integration scripts normalize all
 - **StartDate**: Position start date
 - **EndDate**: Position end date
 - **ApplicationCloseDate**: Application deadline
+
+USAJobs documents are also normalized to the canonical schema above for the main store; the fields listed here are source-specific extras.
 
 ---
 
@@ -747,9 +725,11 @@ All job data is exported to CSV files in the respective `csv/` subdirectories wi
 
 ```
 api/
+├── job_schema.py          # Canonical job schema (single source of truth)
+├── top_jobs.py            # TOP_JOBS list (single source of truth for job titles)
 ├── adzuna/
 │   ├── test_adzuna_api.py
-│   ├── test_adzuna_api_top25.py
+│   ├── test_adzuna_api_top_jobs.py
 │   └── csv/
 ├── arbeitnow/
 │   ├── test_arbeitnow_api.py
@@ -774,7 +754,8 @@ api/
 │   ├── test_jobicy_api.py
 │   ├── job-icy logic.md
 │   └── csv/
-├── README.md (this file)
+├── readme.md (this file)
+├── Test_API_Data_Ingestion.md
 ├── top-jobs.md
 ```
 
@@ -786,5 +767,5 @@ api/
 - Remote positions are prioritized where available
 - Salary information may not be available for all positions
 - Some APIs require client-side filtering after receiving responses
-- Data normalization ensures consistent schema across all sources
+- Data normalization ensures consistent schema across all sources (canonical schema in job_schema.py)
 - CSV exports include all normalized fields for downstream processing
